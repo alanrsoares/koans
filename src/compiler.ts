@@ -1,5 +1,5 @@
 import { match } from "@onrails/pattern";
-import { errAsync, ResultAsync } from "@onrails/result/compat/neverthrow";
+import { errAsync, ResultAsync } from "@onrails/result";
 
 type Assert = {
   equal: (actual: unknown, expected: unknown) => void;
