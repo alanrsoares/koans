@@ -30,7 +30,10 @@ const ICONS: Record<string, { viewBox: string; inner: ReactNode }> = {
     ),
   },
   civet: {
-    viewBox: "0 0 64 64",
+    // Cropped tighter than the artwork's measured bounds (bbox is x0 y2 w66.5
+    // h60.4) to zoom ~22% past the surrounding negative space, so its optical
+    // mass matches the simple-icons marks instead of floating small.
+    viewBox: "5.99 7.44 54.53 49.53",
     inner: (
       <g transform="matrix(0.74298213,0,0,0.74298213,7.295844,8.0815152)">
         <path d="m 53.5,36.5 c 2,0 4,2.5 3.5,4.5 -0.5,2 -2,3.5 -4,3.5 -2,0 -3.5,-1.5 -3.5,-3.5 0,-2 1,-4.5 4,-4.5 z" />
