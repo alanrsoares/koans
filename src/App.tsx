@@ -9,7 +9,7 @@ import { Header } from "./components/Header.tsx";
 import { LessonControls } from "./components/LessonControls.tsx";
 import { ResetDialog } from "./components/ResetDialog.tsx";
 import { clearProgress } from "./lib/storage.ts";
-import { KoanProvider, useKoanStore } from "./store/koanStore.ts";
+import { KoanStoreProvider, useKoanStore } from "./store/koanStore.ts";
 
 // Code-split: the canvas loop only loads when a track is finished (reward, not appetizer).
 const FallingLeaves = lazy(() =>
@@ -52,7 +52,9 @@ function Workspace(): React.JSX.Element {
         <Suspense fallback={null}>
           {/* During the path-complete modal, lift leaves above the overlay blur (below the dialog);
               the all-paths finale stays ambient behind content. */}
-          <FallingLeaves className={state.showCelebration && state.stage === "subpath" ? "z-55" : undefined} />
+          <FallingLeaves
+            className={state.showCelebration && state.stage === "subpath" ? "z-55" : undefined}
+          />
         </Suspense>
       )}
 
@@ -150,10 +152,10 @@ function Workspace(): React.JSX.Element {
 
 export default function App(): React.JSX.Element {
   return (
-    <KoanProvider>
+    <KoanStoreProvider>
       <TooltipProvider>
         <Workspace />
       </TooltipProvider>
-    </KoanProvider>
+    </KoanStoreProvider>
   );
 }
