@@ -7,6 +7,7 @@ import { useKoanState } from "../hooks/useKoanState.ts";
 import { KOANS } from "../koans.ts";
 import { playSuccessSound } from "../lib/audio.ts";
 import { triggerCanvasConfetti } from "../lib/confetti.ts";
+import { loadSoundEnabled, saveSoundEnabled } from "../lib/storage.ts";
 import type { AnswersState, ProgressState } from "../types.ts";
 
 export type Stage = "lesson" | "subpath" | "all";
@@ -23,6 +24,14 @@ function useKoanController() {
   // Lifted out of ExerciseCard so it survives the per-exercise remount (the remount
   // is what re-fires the input autofocus).
   const [disableLigatures, setDisableLigatures] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(loadSoundEnabled);
+
+  const toggleSound = () =>
+    setSoundEnabled((prev) => {
+      const next = !prev;
+      saveSoundEnabled(next);
+      return next;
+    });
 
   const { progress, answers, saveState } = useKoanState();
 
@@ -95,7 +104,7 @@ function useKoanController() {
     const updatedProgress = JSON.parse(JSON.stringify(progress)) as ProgressState;
     updatedProgress[lang][category.name][koanIndex] = true;
     saveState(updatedProgress, activeAnswers);
-    playSuccessSound();
+    if (soundEnabled) playSuccessSound();
     setActiveError(null);
 
     const progressList = updatedProgress[lang][category.name];
@@ -209,6 +218,7 @@ function useKoanController() {
     showCelebration,
     showResetConfirm,
     disableLigatures,
+    soundEnabled,
     answers,
     langConfig,
     category,
@@ -227,6 +237,7 @@ function useKoanController() {
     setShowCelebration,
     setShowResetConfirm,
     setDisableLigatures,
+    toggleSound,
     handleLanguageChange,
     selectCategory,
     handleInputChange,

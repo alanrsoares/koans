@@ -26,6 +26,7 @@ function Workspace(): React.JSX.Element {
       showCelebration,
       showResetConfirm,
       disableLigatures,
+      soundEnabled,
       answers,
       langConfig,
       category,
@@ -43,6 +44,7 @@ function Workspace(): React.JSX.Element {
       setShowCelebration,
       setShowResetConfirm,
       setDisableLigatures,
+      toggleSound,
       handleLanguageChange,
       selectCategory,
       handleInputChange,
@@ -77,8 +79,10 @@ function Workspace(): React.JSX.Element {
       <Header
         currentLanguage={currentLanguage}
         currentCategoryIndex={currentCategoryIndex}
+        soundEnabled={soundEnabled}
         onLanguageChange={handleLanguageChange}
         onCategoryChange={selectCategory}
+        onToggleSound={toggleSound}
         onResetProgress={() => setShowResetConfirm(true)}
       />
 

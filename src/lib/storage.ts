@@ -37,3 +37,11 @@ export function clearProgress(): void {
   localStorage.removeItem(STORAGE_KEY);
   window.location.reload();
 }
+
+const SOUND_KEY = "zen_koans_sound";
+
+// Sound is on unless explicitly disabled, so a fresh visitor hears the chime.
+export const loadSoundEnabled = (): boolean => localStorage.getItem(SOUND_KEY) !== "0";
+
+export const saveSoundEnabled = (enabled: boolean): void =>
+  localStorage.setItem(SOUND_KEY, enabled ? "1" : "0");

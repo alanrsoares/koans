@@ -1,4 +1,4 @@
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Volume2, VolumeX } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -13,16 +13,20 @@ import { LangIcon } from "./LangIcon.tsx";
 interface HeaderProps {
   currentLanguage: string;
   currentCategoryIndex: number;
+  soundEnabled: boolean;
   onLanguageChange: (value: string) => void;
   onCategoryChange: (index: number) => void;
+  onToggleSound: () => void;
   onResetProgress: () => void;
 }
 
 export function Header({
   currentLanguage,
   currentCategoryIndex,
+  soundEnabled,
   onLanguageChange,
   onCategoryChange,
+  onToggleSound,
   onResetProgress,
 }: HeaderProps) {
   const langConfig = KOANS[currentLanguage];
@@ -34,6 +38,23 @@ export function Header({
           ☯
         </span>
         <h1 className="text-base font-bold tracking-wide text-[#4a3e3d] font-display">Zen Koans</h1>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={onToggleSound}
+              aria-label={soundEnabled ? "Mute sound effects" : "Unmute sound effects"}
+              aria-pressed={!soundEnabled}
+              className="ml-1 text-[#8c827a] hover:text-[#2b2626] focus-visible:ring-1 focus-visible:ring-[#2b2626] focus-visible:outline-none rounded transition-colors p-1"
+            >
+              {soundEnabled ? (
+                <Volume2 className="size-4" aria-hidden="true" />
+              ) : (
+                <VolumeX className="size-4" aria-hidden="true" />
+              )}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>{soundEnabled ? "Mute chime" : "Unmute chime"}</TooltipContent>
+        </Tooltip>
       </div>
 
       <div className="flex items-center gap-6 mt-2 sm:mt-0">
