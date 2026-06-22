@@ -130,7 +130,7 @@ body::before {
   height: 48vw;
   max-width: 500px;
   max-height: 500px;
-  background-image: url("https://clojurescriptkoans.com/images/zencircle.png");
+  background-image: url("./assets/zencircle.png");
   background-repeat: no-repeat;
   background-position: bottom right;
   background-size: contain;
