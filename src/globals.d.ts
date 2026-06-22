@@ -29,6 +29,10 @@ interface CoffeeScriptCompiler {
   compile: (code: string, options: { bare: boolean }) => string;
 }
 
+interface CivetCompiler {
+  compile: (code: string, options?: { js?: boolean }) => Promise<string>;
+}
+
 interface GleamCompiler {
   default: (wasmUrl: string) => Promise<void>;
   reset_filesystem: (id: number) => void;
@@ -43,6 +47,7 @@ interface Window {
   squint_compiler?: SquintCompiler;
   squint_core?: unknown;
   CoffeeScript?: CoffeeScriptCompiler;
+  Civet?: CivetCompiler;
   gleam_compiler?: GleamCompiler;
   webkitAudioContext?: typeof AudioContext;
 }

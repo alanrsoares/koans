@@ -3,6 +3,7 @@ export type Language =
   | "typescript"
   | "clojurescript"
   | "coffeescript"
+  | "civet"
   | "gleam";
 
 export type CompilerAdapter = {

@@ -1,12 +1,12 @@
 import { match } from "@onrails/pattern";
 import { errAsync, ResultAsync } from "@onrails/result";
-
-import { type CompilerAdapter, type Language, messageOf } from "./core.ts";
+import { civet } from "./adapters/civet.ts";
 import { clojurescript } from "./adapters/clojurescript.ts";
 import { coffeescript } from "./adapters/coffeescript.ts";
 import { gleam } from "./adapters/gleam.ts";
 import { javascript } from "./adapters/javascript.ts";
 import { typescript } from "./adapters/typescript.ts";
+import { type CompilerAdapter, type Language, messageOf } from "./core.ts";
 
 // To add a language: write src/compiler/adapters/<lang>.ts, then list it here.
 const adapters: CompilerAdapter[] = [
@@ -14,6 +14,7 @@ const adapters: CompilerAdapter[] = [
   typescript,
   clojurescript,
   coffeescript,
+  civet,
   gleam,
 ];
 
