@@ -18,27 +18,7 @@ const FallingLeaves = lazy(() =>
 
 function Workspace(): React.JSX.Element {
   const [
-    {
-      currentLanguage,
-      currentCategoryIndex,
-      activeExerciseIndex,
-      activeError,
-      showCelebration,
-      showResetConfirm,
-      disableLigatures,
-      soundEnabled,
-      answers,
-      langConfig,
-      category,
-      exercise,
-      activeProgressList,
-      isPassed,
-      nextLessonName,
-      stage,
-      allSolved,
-      availableTracks,
-      langProgress,
-    },
+    state,
     {
       setActiveExerciseIndex,
       setShowCelebration,
@@ -56,7 +36,7 @@ function Workspace(): React.JSX.Element {
 
   // Falling leaves: the track-completion reward (while the modal is open) and the
   // persistent all-paths finale.
-  const showLeaves = allSolved || (showCelebration && stage === "subpath");
+  const showLeaves = state.allSolved || (state.showCelebration && state.stage === "subpath");
 
   return (
     <div className="min-h-screen w-full flex flex-col text-foreground font-sans antialiased relative overflow-x-hidden">
@@ -72,14 +52,14 @@ function Workspace(): React.JSX.Element {
         <Suspense fallback={null}>
           {/* During the path-complete modal, lift leaves above the overlay blur (below the dialog);
               the all-paths finale stays ambient behind content. */}
-          <FallingLeaves className={showCelebration && stage === "subpath" ? "z-55" : undefined} />
+          <FallingLeaves className={state.showCelebration && state.stage === "subpath" ? "z-55" : undefined} />
         </Suspense>
       )}
 
       <Header
-        currentLanguage={currentLanguage}
-        currentCategoryIndex={currentCategoryIndex}
-        soundEnabled={soundEnabled}
+        currentLanguage={state.currentLanguage}
+        currentCategoryIndex={state.currentCategoryIndex}
+        soundEnabled={state.soundEnabled}
         onLanguageChange={handleLanguageChange}
         onCategoryChange={selectCategory}
         onToggleSound={toggleSound}
@@ -92,32 +72,32 @@ function Workspace(): React.JSX.Element {
       >
         <div className="text-center mb-14 select-none">
           <h2 className="text-4xl text-ink tracking-normal font-brush text-balance leading-tight">
-            {category?.name}
+            {state.category?.name}
           </h2>
           <BrushUnderline />
           <p className="mt-6 text-base text-muted-foreground italic font-serif leading-relaxed max-w-[560px] mx-auto text-pretty">
-            “{category?.quote}”
+            “{state.category?.quote}”
           </p>
         </div>
 
-        {exercise && category && (
+        {state.exercise && state.category && (
           <div className="flex flex-col items-center">
             <ExerciseCard
-              key={`${currentLanguage}-${currentCategoryIndex}-${activeExerciseIndex}`}
-              exercise={exercise}
-              activeExerciseIndex={activeExerciseIndex}
-              currentLanguage={currentLanguage}
-              categoryName={category.name}
-              answers={answers}
-              activeError={activeError}
-              isPassed={isPassed}
-              disableLigatures={disableLigatures}
+              key={`${state.currentLanguage}-${state.currentCategoryIndex}-${state.activeExerciseIndex}`}
+              exercise={state.exercise}
+              activeExerciseIndex={state.activeExerciseIndex}
+              currentLanguage={state.currentLanguage}
+              categoryName={state.category.name}
+              answers={state.answers}
+              activeError={state.activeError}
+              isPassed={state.isPassed}
+              disableLigatures={state.disableLigatures}
               onToggleLigatures={setDisableLigatures}
               onInputChange={handleInputChange}
               onInputKeyDown={handleInputKeyDown}
             />
 
-            {activeError && (
+            {state.activeError && (
               <Alert
                 variant="destructive"
                 className="mt-4 max-w-[600px] w-full animate-fadeIn border-rose-200/60 bg-rose-50/50 font-serif"
@@ -129,37 +109,37 @@ function Workspace(): React.JSX.Element {
                 </AlertTitle>
                 <AlertDescription>
                   <pre className="font-mono text-[10px] overflow-x-auto whitespace-pre-wrap leading-normal mt-1 bg-white/50 p-2 rounded border border-rose-100/50">
-                    <code>{activeError}</code>
+                    <code>{state.activeError}</code>
                   </pre>
                 </AlertDescription>
               </Alert>
             )}
 
             <LessonControls
-              states={activeProgressList}
-              activeIndex={activeExerciseIndex}
-              total={category.exercises.length}
+              states={state.activeProgressList}
+              activeIndex={state.activeExerciseIndex}
+              total={state.category.exercises.length}
               onSelect={setActiveExerciseIndex}
-              languageName={langConfig?.name ?? ""}
-              langProgress={langProgress}
+              languageName={state.langConfig?.name ?? ""}
+              langProgress={state.langProgress}
             />
           </div>
         )}
 
         <CelebrationDialog
-          open={showCelebration}
+          open={state.showCelebration}
           onOpenChange={setShowCelebration}
-          stage={stage}
-          languageName={langConfig?.name ?? ""}
-          categoryName={category?.name ?? ""}
-          nextLessonName={nextLessonName}
-          availableTracks={availableTracks}
+          stage={state.stage}
+          languageName={state.langConfig?.name ?? ""}
+          categoryName={state.category?.name ?? ""}
+          nextLessonName={state.nextLessonName}
+          availableTracks={state.availableTracks}
           onStartTrack={startLanguageTrack}
           onProceed={proceedFromCelebration}
         />
 
         <ResetDialog
-          open={showResetConfirm}
+          open={state.showResetConfirm}
           onOpenChange={setShowResetConfirm}
           onConfirm={clearProgress}
         />
