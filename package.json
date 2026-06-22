@@ -9,7 +9,8 @@
     "lint": "biome lint .",
     "format": "biome check --write .",
     "typecheck": "tsc --noEmit",
-    "test": "bun test",
+    "test": "bun test src",
+    "test:koans": "playwright test",
     "check": "bun run lint && bun run test",
     "preview": "vite preview"
   },
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.0",
+    "@playwright/test": "^1.61.0",
     "@styled-cva/biome-plugin": "^0.1.0",
     "@types/node": "^24",
     "@types/react": "^19",
