@@ -3,7 +3,7 @@ import { type CompilerAdapter, loadGlobal, runJavaScript } from "../core.ts";
 const loadCoffeeScript = (): Promise<CoffeeScriptCompiler> =>
   loadGlobal(
     "CoffeeScript",
-    "https://cdnjs.cloudflare.com/ajax/libs/coffeescript/2.7.0/coffeescript.min.js",
+    "https://cdn.jsdelivr.net/npm/coffeescript@2.7.0/lib/coffeescript-browser-compiler-legacy/coffeescript.js",
     "CoffeeScript"
   );
 
