@@ -69,18 +69,16 @@ export function CelebrationDialog({
         <DialogHeader className="flex flex-col items-center gap-3">
           {/* Ensō — the brush circle of completion and wholeness (also the app's mark). */}
           <div className="text-maple mb-1">
-            <svg
-              viewBox="0 0 100 100"
-              className="size-12 mx-auto"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={8}
-              strokeLinecap="round"
+            <img
+              src="/svg/zen_brush_symbol.svg"
+              className="size-16 mx-auto"
+              style={{
+                filter: "invert(24%) sepia(59%) saturate(1903%) hue-rotate(338deg) brightness(84%) contrast(92%)",
+              }}
               role="img"
               aria-hidden="true"
-            >
-              <path d="M50 16 A34 34 0 1 1 30 25" transform="rotate(-18 50 50)" />
-            </svg>
+              alt=""
+            />
           </div>
           <DialogTitle
             id="celebration-title"

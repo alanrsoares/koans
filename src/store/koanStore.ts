@@ -1,6 +1,7 @@
 import { isErr } from "@onrails/result";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import { createContainer } from "unstated-next";
 import { evaluateKoan } from "../compiler/index.ts";
 import { useKoanState } from "../hooks/useKoanState.ts";
@@ -21,6 +22,16 @@ const allBlanksFilled = (userAnswers: string[], requiredBlanks: number): boolean
 // Focus the input at `index` if it exists; a no-op past either edge.
 const focusInput = (inputs: HTMLInputElement[], index: number): void => {
   if (index >= 0 && index < inputs.length) inputs[index].focus();
+};
+
+const startTransition = (cb: () => void) => {
+  if (typeof document !== "undefined" && document.startViewTransition) {
+    document.startViewTransition(() => {
+      flushSync(cb);
+    });
+  } else {
+    cb();
+  }
 };
 
 function useKoanController() {
@@ -62,16 +73,20 @@ function useKoanController() {
   }, [currentLanguage, currentCategoryIndex, progress]);
 
   const handleLanguageChange = (nextLang: string) => {
-    setCurrentLanguage(nextLang);
-    setCurrentCategoryIndex(0);
-    setActiveError(null);
-    setShowCelebration(false);
+    startTransition(() => {
+      setCurrentLanguage(nextLang);
+      setCurrentCategoryIndex(0);
+      setActiveError(null);
+      setShowCelebration(false);
+    });
   };
 
   const selectCategory = (index: number) => {
-    setCurrentCategoryIndex(index);
-    setActiveError(null);
-    setShowCelebration(false);
+    startTransition(() => {
+      setCurrentCategoryIndex(index);
+      setActiveError(null);
+      setShowCelebration(false);
+    });
   };
 
   // Escalating chimes: a light bell per answer, the bowl when a lesson is done,
@@ -92,7 +107,11 @@ function useKoanController() {
     if (!lessonComplete) {
       const nextIncomplete = progressList.indexOf(false);
       if (nextIncomplete !== -1) {
-        setTimeout(() => setActiveExerciseIndex(nextIncomplete), 800);
+        setTimeout(() => {
+          startTransition(() => {
+            setActiveExerciseIndex(nextIncomplete);
+          });
+        }, 800);
       }
       return;
     }
@@ -180,10 +199,12 @@ function useKoanController() {
   // Explicit selection — no auto-jumping.
   const startLanguageTrack = (langKey: string) => {
     if (!KOANS[langKey]) return;
-    setCurrentLanguage(langKey);
-    setCurrentCategoryIndex(Math.max(0, firstIncompleteCategory(langKey)));
-    setActiveError(null);
-    setShowCelebration(false);
+    startTransition(() => {
+      setCurrentLanguage(langKey);
+      setCurrentCategoryIndex(Math.max(0, firstIncompleteCategory(langKey)));
+      setActiveError(null);
+      setShowCelebration(false);
+    });
   };
 
   // Used by the lesson + all-complete stages. Track completion is handled by the
@@ -251,8 +272,14 @@ function useKoanController() {
     langProgress,
   };
 
+  const setTransitionActiveExerciseIndex = (index: React.SetStateAction<number>) => {
+    startTransition(() => {
+      setActiveExerciseIndex(index);
+    });
+  };
+
   const actions = {
-    setActiveExerciseIndex,
+    setActiveExerciseIndex: setTransitionActiveExerciseIndex,
     setShowCelebration,
     setShowResetConfirm,
     setDisableLigatures,

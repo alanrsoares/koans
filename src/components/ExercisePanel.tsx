@@ -13,23 +13,25 @@ export function ExercisePanel(): React.JSX.Element | null {
   if (!state.exercise || !state.category) return null;
 
   return (
-    <div className="flex flex-col items-center">
-      <ExerciseCard
-        key={`${state.currentLanguage}-${state.currentCategoryIndex}-${state.activeExerciseIndex}`}
-        exercise={state.exercise}
-        activeExerciseIndex={state.activeExerciseIndex}
-        currentLanguage={state.currentLanguage}
-        categoryName={state.category.name}
-        answers={state.answers}
-        activeError={state.activeError}
-        isPassed={state.isPassed}
-        disableLigatures={state.disableLigatures}
-        onToggleLigatures={setDisableLigatures}
-        onInputChange={handleInputChange}
-        onInputKeyDown={handleInputKeyDown}
-      />
+    <div className="flex flex-col items-center w-full">
+      <div className="exercise-card-wrapper w-full max-w-[640px] flex flex-col items-center">
+        <ExerciseCard
+          key={`${state.currentLanguage}-${state.currentCategoryIndex}-${state.activeExerciseIndex}`}
+          exercise={state.exercise}
+          activeExerciseIndex={state.activeExerciseIndex}
+          currentLanguage={state.currentLanguage}
+          categoryName={state.category.name}
+          answers={state.answers}
+          activeError={state.activeError}
+          isPassed={state.isPassed}
+          disableLigatures={state.disableLigatures}
+          onToggleLigatures={setDisableLigatures}
+          onInputChange={handleInputChange}
+          onInputKeyDown={handleInputKeyDown}
+        />
 
-      {state.activeError && <KoanError message={state.activeError} />}
+        {state.activeError && <KoanError message={state.activeError} />}
+      </div>
 
       <LessonControls
         states={state.activeProgressList}

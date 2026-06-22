@@ -238,3 +238,54 @@ body::before {
     scroll-behavior: auto !important;
   }
 }
+
+/* Exercise Card View Transition */
+.koan-card {
+  view-transition-name: exercise-card;
+}
+
+.exercise-card-wrapper {
+  view-transition-name: exercise-card-wrapper;
+}
+
+/* Ensure the wrapper's container transition uses our smooth Zen easing */
+::view-transition-group(exercise-card-wrapper) {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-old(exercise-card) {
+  animation: slideOutToLeft 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+::view-transition-new(exercise-card) {
+  animation: slideInFromRight 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes slideOutToLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(max(-100vw, -800px));
+    opacity: 0;
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(min(100vw, 800px));
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
