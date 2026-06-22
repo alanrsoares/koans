@@ -5,7 +5,7 @@ import { createContainer } from "unstated-next";
 import { evaluateKoan } from "../compiler/index.ts";
 import { useKoanState } from "../hooks/useKoanState.ts";
 import { KOANS } from "../koans.ts";
-import { playSuccessSound } from "../lib/audio.ts";
+import { playLessonComplete, playPathComplete, playRightAnswer } from "../lib/audio.ts";
 import { triggerCanvasConfetti } from "../lib/confetti.ts";
 import { loadSoundEnabled, saveSoundEnabled } from "../lib/storage.ts";
 import type { AnswersState, ProgressState } from "../types.ts";
@@ -104,15 +104,25 @@ function useKoanController() {
     const updatedProgress = JSON.parse(JSON.stringify(progress)) as ProgressState;
     updatedProgress[lang][category.name][koanIndex] = true;
     saveState(updatedProgress, activeAnswers);
-    if (soundEnabled) playSuccessSound();
     setActiveError(null);
 
     const progressList = updatedProgress[lang][category.name];
-    if (progressList.every(Boolean)) {
+    const lessonComplete = progressList.every(Boolean);
+    const pathComplete = lessonComplete && isLangSolved(lang, updatedProgress);
+
+    // Escalating chimes: a light bell per answer, the bowl when a lesson is done,
+    // a deep gong when the whole language path is finished.
+    if (soundEnabled) {
+      if (pathComplete) playPathComplete();
+      else if (lessonComplete) playLessonComplete();
+      else playRightAnswer();
+    }
+
+    if (lessonComplete) {
       setShowCelebration(true);
       // A single lesson gets confetti; completing a whole track shows the falling-leaves
       // finale (rendered in App while the celebration modal is open).
-      if (!isLangSolved(lang, updatedProgress)) triggerCanvasConfetti();
+      if (!pathComplete) triggerCanvasConfetti();
     } else {
       const nextIncomplete = progressList.indexOf(false);
       if (nextIncomplete !== -1) {
