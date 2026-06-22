@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { createContainer } from "unstated-next";
 import { evaluateKoan } from "../compiler.ts";
 import { useKoanState } from "../hooks/useKoanState.ts";
@@ -23,44 +23,34 @@ function useKoanController() {
   const { progress, answers, saveState } = useKoanState();
 
   // A subpath (language) is solved when every one of its lessons is solved.
-  const isLangSolved = useCallback(
-    (lang: string, prog: ProgressState = progress) =>
-      KOANS[lang].categories.every((c) => (prog[lang]?.[c.name] ?? []).every(Boolean)),
-    [progress]
-  );
+  const isLangSolved = (lang: string, prog: ProgressState = progress) =>
+    KOANS[lang].categories.every((c) => (prog[lang]?.[c.name] ?? []).every(Boolean));
 
-  const firstIncompleteCategory = useCallback(
-    (lang: string) =>
-      (KOANS[lang]?.categories || []).findIndex(
-        (c) => !(progress[lang]?.[c.name] || []).every(Boolean)
-      ),
-    [progress]
-  );
+  const firstIncompleteCategory = (lang: string) =>
+    (KOANS[lang]?.categories || []).findIndex(
+      (c) => !(progress[lang]?.[c.name] || []).every(Boolean)
+    );
 
-  // Move to the first unsolved koan whenever the language or lesson changes.
-  const firstIncompleteIndex = useCallback((): number => {
-    const cat = KOANS[currentLanguage]?.categories[currentCategoryIndex];
-    return cat ? (progress[currentLanguage]?.[cat.name]?.indexOf(false) ?? -1) : -1;
-  }, [currentLanguage, currentCategoryIndex, progress]);
-
+  // Jump to the first unsolved koan when the language, lesson, or progress changes.
   useEffect(() => {
-    const next = firstIncompleteIndex();
+    const cat = KOANS[currentLanguage]?.categories[currentCategoryIndex];
+    const next = cat ? (progress[currentLanguage]?.[cat.name]?.indexOf(false) ?? -1) : -1;
     setActiveExerciseIndex(next === -1 ? 0 : next);
     setActiveError(null);
     setShowCelebration(false);
-  }, [firstIncompleteIndex]);
+  }, [currentLanguage, currentCategoryIndex, progress]);
 
-  const focusFirstBlank = useCallback(() => {
-    const card = document.querySelector(".koan-card");
-    const inputs = card?.querySelectorAll<HTMLInputElement>(".koan-input");
-    if (!inputs?.length) return;
-    (Array.from(inputs).find((input) => !input.value) ?? inputs[0]).focus();
-  }, []);
-
+  // Focus the first empty blank of the active koan whenever it changes.
   useEffect(() => {
-    const timer = setTimeout(focusFirstBlank, 120);
+    const timer = setTimeout(() => {
+      const inputs = document.querySelectorAll<HTMLInputElement>(
+        `.koan-card .koan-input[data-koan-index="${activeExerciseIndex}"]`
+      );
+      if (!inputs.length) return;
+      (Array.from(inputs).find((input) => !input.value) ?? inputs[0]).focus();
+    }, 120);
     return () => clearTimeout(timer);
-  }, [focusFirstBlank]);
+  }, [activeExerciseIndex]);
 
   const handleLanguageChange = (nextLang: string) => {
     setCurrentLanguage(nextLang);
