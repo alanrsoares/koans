@@ -7,10 +7,21 @@ import { useKoanState } from "../hooks/useKoanState.ts";
 import { KOANS } from "../koans.ts";
 import { playLessonComplete, playPathComplete, playRightAnswer } from "../lib/audio.ts";
 import { triggerCanvasConfetti } from "../lib/confetti.ts";
+import { blankCount, fillBlanks } from "../lib/fillBlanks.ts";
 import { loadSoundEnabled, saveSoundEnabled } from "../lib/storage.ts";
 import type { AnswersState, ProgressState } from "../types.ts";
 
 export type Stage = "lesson" | "subpath" | "all";
+
+// Every required blank is present and non-whitespace.
+const allBlanksFilled = (userAnswers: string[], requiredBlanks: number): boolean =>
+  userAnswers.length >= requiredBlanks &&
+  userAnswers.slice(0, requiredBlanks).every((val) => val.trim() !== "");
+
+// Focus the input at `index` if it exists; a no-op past either edge.
+const focusInput = (inputs: HTMLInputElement[], index: number): void => {
+  if (index >= 0 && index < inputs.length) inputs[index].focus();
+};
 
 function useKoanController() {
   const [currentLanguage, setCurrentLanguage] = useState("javascript");
@@ -63,6 +74,34 @@ function useKoanController() {
     setShowCelebration(false);
   };
 
+  // Escalating chimes: a light bell per answer, the bowl when a lesson is done,
+  // a deep gong when the whole language path is finished.
+  const playProgressChime = (lessonComplete: boolean, pathComplete: boolean) => {
+    if (!soundEnabled) return;
+    if (pathComplete) playPathComplete();
+    else if (lessonComplete) playLessonComplete();
+    else playRightAnswer();
+  };
+
+  // After a correct answer: celebrate a finished lesson, otherwise step to the next koan.
+  const celebrateOrAdvance = (
+    progressList: boolean[],
+    lessonComplete: boolean,
+    pathComplete: boolean
+  ) => {
+    if (!lessonComplete) {
+      const nextIncomplete = progressList.indexOf(false);
+      if (nextIncomplete !== -1) {
+        setTimeout(() => setActiveExerciseIndex(nextIncomplete), 800);
+      }
+      return;
+    }
+    setShowCelebration(true);
+    // A single lesson gets confetti; completing a whole track shows the falling-leaves
+    // finale (rendered in App while the celebration modal is open).
+    if (!pathComplete) triggerCanvasConfetti();
+  };
+
   const verifyKoan = async (
     koanIndex: number,
     activeAnswers: AnswersState,
@@ -75,23 +114,13 @@ function useKoanController() {
     const { template } = category.exercises[koanIndex];
     const userAnswers = activeAnswers[lang]?.[category.name]?.[koanIndex] || [];
 
-    const requiredBlanks = template.split("__").length - 1;
-    const isAnyBlankEmpty =
-      userAnswers.length < requiredBlanks ||
-      userAnswers.slice(0, requiredBlanks).some((val) => !val || val.trim() === "");
-    if (isAnyBlankEmpty && !forceVerify) {
+    if (!allBlanksFilled(userAnswers, blankCount(template)) && !forceVerify) {
       setActiveError(null);
       return;
     }
 
-    // Splice the answers back into the template's blanks.
-    const parts = template.split("__");
-    const code = parts.reduce(
-      (acc, part, i) => acc + part + (i < parts.length - 1 ? userAnswers[i] || "" : ""),
-      ""
-    );
-
-    const evaluation = await evaluateKoan(lang, code);
+    // Splice the answers back into the template's blanks, then compile + run.
+    const evaluation = await evaluateKoan(lang, fillBlanks(template, userAnswers));
     if (isErr(evaluation)) {
       setActiveError(evaluation.error.message);
       return;
@@ -106,25 +135,8 @@ function useKoanController() {
     const lessonComplete = progressList.every(Boolean);
     const pathComplete = lessonComplete && isLangSolved(lang, updatedProgress);
 
-    // Escalating chimes: a light bell per answer, the bowl when a lesson is done,
-    // a deep gong when the whole language path is finished.
-    if (soundEnabled) {
-      if (pathComplete) playPathComplete();
-      else if (lessonComplete) playLessonComplete();
-      else playRightAnswer();
-    }
-
-    if (lessonComplete) {
-      setShowCelebration(true);
-      // A single lesson gets confetti; completing a whole track shows the falling-leaves
-      // finale (rendered in App while the celebration modal is open).
-      if (!pathComplete) triggerCanvasConfetti();
-    } else {
-      const nextIncomplete = progressList.indexOf(false);
-      if (nextIncomplete !== -1) {
-        setTimeout(() => setActiveExerciseIndex(nextIncomplete), 800);
-      }
-    }
+    playProgressChime(lessonComplete, pathComplete);
+    celebrateOrAdvance(progressList, lessonComplete, pathComplete);
   };
 
   const handleInputChange = async (koanIndex: number, inputIndex: number, value: string) => {
@@ -151,15 +163,16 @@ function useKoanController() {
     const card = document.querySelector(".koan-card");
     if (!card) return;
     const inputs = Array.from(card.querySelectorAll<HTMLInputElement>(".koan-input"));
+    const atEnd = input.selectionStart === input.value.length;
+    const atStart = input.selectionEnd === 0;
+    const isLast = inputIndex === inputs.length - 1;
 
-    if (e.key === "ArrowRight" && input.selectionStart === input.value.length) {
-      if (inputIndex < inputs.length - 1) inputs[inputIndex + 1].focus();
-    } else if (e.key === "ArrowLeft" && input.selectionEnd === 0) {
-      if (inputIndex > 0) inputs[inputIndex - 1].focus();
-    } else if (e.key === "Enter") {
+    if (e.key === "ArrowRight" && atEnd) focusInput(inputs, inputIndex + 1);
+    else if (e.key === "ArrowLeft" && atStart) focusInput(inputs, inputIndex - 1);
+    else if (e.key === "Enter") {
       e.preventDefault();
-      if (inputIndex < inputs.length - 1) inputs[inputIndex + 1].focus();
-      else verifyKoan(koanIndex, answers, true);
+      if (isLast) verifyKoan(koanIndex, answers, true);
+      else focusInput(inputs, inputIndex + 1);
     }
   };
 
