@@ -43,7 +43,10 @@ const CodeBlock = tw.div(
 );
 
 const KoanInput = tw.input(
-  "koan-input mx-1 box-content min-w-[3ch] rounded-md px-2 py-0.5 text-center align-middle font-mono text-base font-bold text-ink transition-[border-color,background-color,box-shadow] duration-200 focus-visible:outline-none",
+  [
+    "koan-input mx-1 box-content min-w-[3ch] rounded-md px-2 py-0.5 text-center align-middle font-mono text-base font-bold",
+    "text-ink transition-[border-color,background-color,box-shadow] duration-200 focus-visible:outline-none",
+  ],
   {
     variants: {
       $passed: {
