@@ -1,12 +1,11 @@
 import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert.tsx";
 import { TooltipProvider } from "@/components/ui/tooltip.tsx";
 import { evaluateKoan } from "./compiler.ts";
 import { BrushUnderline } from "./components/BrushUnderline.tsx";
 import { CelebrationDialog } from "./components/CelebrationDialog.tsx";
 import { ExerciseCard } from "./components/ExerciseCard.tsx";
-import { FallingLeaves } from "./components/FallingLeaves.tsx";
 import { Header } from "./components/Header.tsx";
 import { LessonControls } from "./components/LessonControls.tsx";
 import { ResetDialog } from "./components/ResetDialog.tsx";
@@ -17,6 +16,12 @@ import { triggerCanvasConfetti } from "./lib/confetti.ts";
 import { clearProgress } from "./lib/storage.ts";
 import type { AnswersState, ProgressState } from "./types.ts";
 
+// The maple-leaf finale: code-split so its canvas loop only loads once a whole
+// language path is complete (the reward, not an ambient appetizer).
+const FallingLeaves = lazy(() =>
+  import("./components/FallingLeaves.tsx").then((m) => ({ default: m.FallingLeaves }))
+);
+
 export default function App(): React.JSX.Element {
   const [currentLanguage, setCurrentLanguage] = useState<string>("javascript");
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState<number>(0);
@@ -24,6 +29,7 @@ export default function App(): React.JSX.Element {
   const [activeError, setActiveError] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState<boolean>(false);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
+  const [pathComplete, setPathComplete] = useState<boolean>(false);
 
   const { progress, answers, saveState } = useKoanState();
   const workspaceRef = useRef<HTMLDivElement>(null);
@@ -58,6 +64,7 @@ export default function App(): React.JSX.Element {
     setCurrentCategoryIndex(0);
     setActiveError(null);
     setShowCelebration(false);
+    setPathComplete(false);
   };
 
   const selectCategory = (index: number) => {
@@ -108,8 +115,15 @@ export default function App(): React.JSX.Element {
 
     const progressList = updatedProgress[lang][category.name];
     if (progressList.every(Boolean)) {
+      const langSolved = KOANS[lang].categories.every((c) =>
+        updatedProgress[lang][c.name]?.every(Boolean)
+      );
       setShowCelebration(true);
-      triggerCanvasConfetti();
+      if (langSolved) {
+        setPathComplete(true); // maple-leaf finale (lazy-loaded)
+      } else {
+        triggerCanvasConfetti(); // lighter per-lesson reward
+      }
     } else {
       const nextIncomplete = progressList.indexOf(false);
       if (nextIncomplete !== -1) {
@@ -154,16 +168,14 @@ export default function App(): React.JSX.Element {
     }
   };
 
-  const proceedToNextCategory = () => {
+  const proceedToNextLesson = () => {
+    setShowCelebration(false);
+    if (pathComplete) return; // the leaves finale stays on screen
     const categories = KOANS[currentLanguage]?.categories || [];
-    if (currentCategoryIndex < categories.length - 1) {
-      selectCategory(currentCategoryIndex + 1);
-    } else {
-      setShowCelebration(false);
-      window.alert(
-        "Congratulations! You have walked every path to enlightenment in this language."
-      );
-    }
+    const nextIncomplete = categories.findIndex(
+      (c) => !(progress[currentLanguage]?.[c.name] || []).every(Boolean)
+    );
+    if (nextIncomplete !== -1) selectCategory(nextIncomplete);
   };
 
   const langConfig = KOANS[currentLanguage];
@@ -172,6 +184,14 @@ export default function App(): React.JSX.Element {
 
   const activeProgressList = progress[currentLanguage]?.[category?.name] || [];
   const isPassed = activeProgressList[activeExerciseIndex] === true;
+
+  const nextLessonName = (() => {
+    const categories = langConfig?.categories || [];
+    const idx = categories.findIndex(
+      (c) => !(progress[currentLanguage]?.[c.name] || []).every(Boolean)
+    );
+    return idx === -1 ? null : categories[idx].name;
+  })();
 
   const langProgress = (() => {
     const categories = langConfig?.categories || [];
@@ -194,7 +214,11 @@ export default function App(): React.JSX.Element {
         </a>
 
         <div className="zen-watermark" aria-hidden="true" />
-        <FallingLeaves />
+        {pathComplete && (
+          <Suspense fallback={null}>
+            <FallingLeaves />
+          </Suspense>
+        )}
 
         <Header
           currentLanguage={currentLanguage}
@@ -265,10 +289,11 @@ export default function App(): React.JSX.Element {
           <CelebrationDialog
             open={showCelebration}
             onOpenChange={setShowCelebration}
-            isFinalCategory={currentCategoryIndex === (langConfig?.categories.length || 0) - 1}
+            pathComplete={pathComplete}
             languageName={langConfig?.name ?? ""}
             categoryName={category?.name ?? ""}
-            onProceed={proceedToNextCategory}
+            nextLessonName={nextLessonName}
+            onProceed={proceedToNextLesson}
           />
 
           <ResetDialog

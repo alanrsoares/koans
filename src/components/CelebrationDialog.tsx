@@ -10,20 +10,32 @@ import {
 interface CelebrationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  isFinalCategory: boolean;
+  pathComplete: boolean;
   languageName: string;
   categoryName: string;
+  nextLessonName: string | null;
   onProceed: () => void;
 }
 
 export function CelebrationDialog({
   open,
   onOpenChange,
-  isFinalCategory,
+  pathComplete,
   languageName,
   categoryName,
+  nextLessonName,
   onProceed,
 }: CelebrationDialogProps) {
+  const title = pathComplete ? "Path Complete" : "Lesson Complete";
+  const body = pathComplete
+    ? `You have walked every lesson on the ${languageName} path. Rest here a while, or choose another path.`
+    : `You solved every koan in ${categoryName}.`;
+  const cta = pathComplete
+    ? "Rest in the leaves"
+    : nextLessonName
+      ? `Continue: ${nextLessonName}`
+      : "Continue";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -38,21 +50,19 @@ export function CelebrationDialog({
             id="celebration-title"
             className="text-3xl tracking-normal text-[var(--ink)] font-brush text-balance"
           >
-            Category Complete!
+            {title}
           </DialogTitle>
         </DialogHeader>
         <DialogDescription className="text-[var(--muted-foreground)] text-base leading-relaxed font-serif">
-          {isFinalCategory
-            ? `You have masterfully completed all paths in ${languageName}! You have reached the pinnacle of understanding!`
-            : `You have successfully solved all koans in the ${categoryName} lesson. Continue your training to reach further enlightenment.`}
+          {body}
         </DialogDescription>
         <button
           type="button"
           onClick={onProceed}
           className="w-full bg-[var(--ink)] hover:bg-[oklch(0.32_0.01_40)] text-[var(--background)] hover:scale-[1.01] active:scale-[0.99] focus-visible:scale-[1.01] focus-visible:ring-2 focus-visible:ring-[var(--ink)] focus-visible:ring-offset-2 focus-visible:outline-none rounded-lg py-2.5 text-sm font-bold flex items-center justify-center gap-2 shadow-md transition-[background-color,transform,box-shadow] duration-200 cursor-pointer"
         >
-          Proceed to Next Lesson
-          <ArrowRight className="size-4" aria-hidden="true" />
+          {cta}
+          {!pathComplete && <ArrowRight className="size-4" aria-hidden="true" />}
         </button>
       </DialogContent>
     </Dialog>
