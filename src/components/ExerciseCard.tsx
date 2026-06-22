@@ -164,7 +164,7 @@ export function ExerciseCard({
             onChange={(e) => setDisableLigatures(e.target.checked)}
             className="size-3.5 accent-maple cursor-pointer"
           />
-          Plain operators (no ligatures)
+          Ligatures {disableLigatures ? "on" : "off"}
         </label>
       </div>
     </div>

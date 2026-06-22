@@ -6,6 +6,7 @@ import { evaluateKoan } from "./compiler.ts";
 import { BrushUnderline } from "./components/BrushUnderline.tsx";
 import { CelebrationDialog } from "./components/CelebrationDialog.tsx";
 import { ExerciseCard } from "./components/ExerciseCard.tsx";
+import { FallingLeaves } from "./components/FallingLeaves.tsx";
 import { Header } from "./components/Header.tsx";
 import { LessonControls } from "./components/LessonControls.tsx";
 import { ResetDialog } from "./components/ResetDialog.tsx";
@@ -193,6 +194,7 @@ export default function App(): React.JSX.Element {
         </a>
 
         <div className="zen-watermark" aria-hidden="true" />
+        <FallingLeaves />
 
         <Header
           currentLanguage={currentLanguage}
