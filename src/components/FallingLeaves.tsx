@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 
 // Japanese maple (momiji) autumn tones.
 const LEAF_COLORS = ["#9e3520", "#b9472f", "#c75b39", "#d97b3f", "#e0a050"];
@@ -24,8 +25,10 @@ const MAPLE_BODY =
 const MAPLE_STEM =
   "M59.17 122.18c.2.99 1.31 1.87 4.39 2.07c3.08.2 5.15-.3 5.23-1.95c.09-1.65-1.14-3.49-1.34-4.88c-.2-1.39-.99-10.74-1.19-15.61c-.2-4.87-.36-14.16-.36-14.16l-4.07.43s.06 9.65-.14 14.52c-.2 4.87-1.01 12.01-1.11 13.89c-.09 1.71-1.83 3.61-1.41 5.69z";
 
-// Ambient maple leaves drifting down behind the content. Pure 2D canvas, no deps.
-export function FallingLeaves() {
+// Ambient maple leaves drifting down. Pure 2D canvas, no deps.
+// className lets callers control the z-layer (ambient finale behind content vs.
+// the celebration shower that sits above the dialog overlay).
+export function FallingLeaves({ className }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -110,5 +113,10 @@ export function FallingLeaves() {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none z-0" />;
+  return (
+    <canvas
+      ref={canvasRef}
+      className={cn("fixed inset-0 w-full h-full pointer-events-none z-0", className)}
+    />
+  );
 }

@@ -19,6 +19,9 @@ function useKoanController() {
   const [activeError, setActiveError] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  // Lifted out of ExerciseCard so it survives the per-exercise remount (the remount
+  // is what re-fires the input autofocus).
+  const [disableLigatures, setDisableLigatures] = useState(false);
 
   const { progress, answers, saveState } = useKoanState();
 
@@ -31,26 +34,15 @@ function useKoanController() {
       (c) => !(progress[lang]?.[c.name] || []).every(Boolean)
     );
 
-  // Jump to the first unsolved koan when the language, lesson, or progress changes.
+  // Jump to the first unsolved koan when language, lesson, or progress changes.
+  // Does NOT reset showCelebration/activeError — those are navigation concerns owned by
+  // handleLanguageChange/selectCategory/proceedFromCelebration. Resetting them here clobbered
+  // the celebration that verifyKoan sets when the final koan in a lesson is solved.
   useEffect(() => {
     const cat = KOANS[currentLanguage]?.categories[currentCategoryIndex];
     const next = cat ? (progress[currentLanguage]?.[cat.name]?.indexOf(false) ?? -1) : -1;
     setActiveExerciseIndex(next === -1 ? 0 : next);
-    setActiveError(null);
-    setShowCelebration(false);
   }, [currentLanguage, currentCategoryIndex, progress]);
-
-  // Focus the first empty blank of the active koan whenever it changes.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const inputs = document.querySelectorAll<HTMLInputElement>(
-        `.koan-card .koan-input[data-koan-index="${activeExerciseIndex}"]`
-      );
-      if (!inputs.length) return;
-      (Array.from(inputs).find((input) => !input.value) ?? inputs[0]).focus();
-    }, 120);
-    return () => clearTimeout(timer);
-  }, [activeExerciseIndex]);
 
   const handleLanguageChange = (nextLang: string) => {
     setCurrentLanguage(nextLang);
@@ -108,9 +100,9 @@ function useKoanController() {
     const progressList = updatedProgress[lang][category.name];
     if (progressList.every(Boolean)) {
       setShowCelebration(true);
-      // Maple leaves are the all-paths finale; everything short of that gets confetti.
-      const everythingSolved = Object.keys(KOANS).every((l) => isLangSolved(l, updatedProgress));
-      if (!everythingSolved) triggerCanvasConfetti();
+      // A single lesson gets confetti; completing a whole track shows the falling-leaves
+      // finale (rendered in App while the celebration modal is open).
+      if (!isLangSolved(lang, updatedProgress)) triggerCanvasConfetti();
     } else {
       const nextIncomplete = progressList.indexOf(false);
       if (nextIncomplete !== -1) {
@@ -155,24 +147,25 @@ function useKoanController() {
     }
   };
 
+  // Start a chosen language track from the celebration modal's track picker.
+  // Explicit selection — no auto-jumping.
+  const startLanguageTrack = (langKey: string) => {
+    if (!KOANS[langKey]) return;
+    setCurrentLanguage(langKey);
+    setCurrentCategoryIndex(Math.max(0, firstIncompleteCategory(langKey)));
+    setActiveError(null);
+    setShowCelebration(false);
+  };
+
+  // Used by the lesson + all-complete stages. Track completion is handled by the
+  // track picker (startLanguageTrack), not here.
   const proceedFromCelebration = () => {
     setShowCelebration(false);
 
     // Everything solved → the leaves finale stays; nowhere to go.
     if (Object.keys(KOANS).every((l) => isLangSolved(l))) return;
 
-    // Current subpath solved → chain to the next unsolved subpath (language).
-    if (isLangSolved(currentLanguage)) {
-      const nextLang = Object.keys(KOANS).find((l) => !isLangSolved(l));
-      if (nextLang) {
-        setCurrentLanguage(nextLang);
-        setCurrentCategoryIndex(Math.max(0, firstIncompleteCategory(nextLang)));
-        setActiveError(null);
-      }
-      return;
-    }
-
-    // Otherwise advance to the next unsolved lesson in this subpath.
+    // Advance to the next unsolved lesson in this track.
     const next = firstIncompleteCategory(currentLanguage);
     if (next !== -1) selectCategory(next);
   };
@@ -191,8 +184,11 @@ function useKoanController() {
   const allSolved = Object.keys(KOANS).every((l) => isLangSolved(l));
   const subpathSolved = isLangSolved(currentLanguage);
   const stage: Stage = allSolved ? "all" : subpathSolved ? "subpath" : "lesson";
-  const nextLanguageKey = Object.keys(KOANS).find((l) => !isLangSolved(l));
-  const nextLanguageName = nextLanguageKey ? KOANS[nextLanguageKey].name : null;
+
+  // Unsolved language tracks the user can pick from the celebration modal.
+  const availableTracks = Object.keys(KOANS)
+    .filter((l) => !isLangSolved(l))
+    .map((l) => ({ key: l, name: KOANS[l].name }));
 
   const langProgress = (() => {
     const categories = langConfig?.categories || [];
@@ -211,6 +207,7 @@ function useKoanController() {
     activeError,
     showCelebration,
     showResetConfirm,
+    disableLigatures,
     answers,
     langConfig,
     category,
@@ -218,7 +215,7 @@ function useKoanController() {
     activeProgressList,
     isPassed,
     nextLessonName,
-    nextLanguageName,
+    availableTracks,
     stage,
     allSolved,
     langProgress,
@@ -228,11 +225,13 @@ function useKoanController() {
     setActiveExerciseIndex,
     setShowCelebration,
     setShowResetConfirm,
+    setDisableLigatures,
     handleLanguageChange,
     selectCategory,
     handleInputChange,
     handleInputKeyDown,
     proceedFromCelebration,
+    startLanguageTrack,
   };
 
   return [state, actions] as const;

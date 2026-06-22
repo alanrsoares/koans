@@ -1,6 +1,6 @@
 import { match } from "@onrails/pattern";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils.ts";
 import type { Exercise } from "../koans.ts";
 import { type Token, tokenize } from "../tokenizer.ts";
@@ -14,6 +14,8 @@ interface ExerciseCardProps {
   answers: AnswersState;
   activeError: string | null;
   isPassed: boolean;
+  disableLigatures: boolean;
+  onToggleLigatures: (disabled: boolean) => void;
   onInputChange: (koanIndex: number, inputIndex: number, value: string) => void;
   onInputKeyDown: (
     koanIndex: number,
@@ -30,12 +32,19 @@ export function ExerciseCard({
   answers,
   activeError,
   isPassed,
+  disableLigatures,
+  onToggleLigatures,
   onInputChange,
   onInputKeyDown,
 }: ExerciseCardProps) {
-  // Ligatures on by default; reader can opt into plain operators if the tokenizer's
-  // per-char spans make ligated glyphs (===, =>) overlap.
-  const [disableLigatures, setDisableLigatures] = useState(false);
+  // Focus the first empty blank on mount. The parent remounts this card per exercise
+  // (via key), so this fires on every koan/lesson/track change.
+  const cardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const inputs = cardRef.current?.querySelectorAll<HTMLInputElement>(".koan-input");
+    if (!inputs?.length) return;
+    (Array.from(inputs).find((input) => !input.value) ?? inputs[0]).focus();
+  }, []);
 
   // Tailwind class for a token's syntax color.
   function colorFor(token: Token): string {
@@ -124,7 +133,7 @@ export function ExerciseCard({
   }
 
   return (
-    <div className="flex flex-col items-center w-full">
+    <div ref={cardRef} className="flex flex-col items-center w-full">
       {/* Contemplation Text */}
       <p className="text-lg text-foreground font-serif text-center leading-relaxed max-w-[600px] mb-9 wrap-break-word text-pretty animate-fadeIn">
         {exercise.description}
@@ -161,7 +170,7 @@ export function ExerciseCard({
           <input
             type="checkbox"
             checked={disableLigatures}
-            onChange={(e) => setDisableLigatures(e.target.checked)}
+            onChange={(e) => onToggleLigatures(e.target.checked)}
             className="size-3.5 accent-maple cursor-pointer"
           />
           Ligatures {disableLigatures ? "on" : "off"}

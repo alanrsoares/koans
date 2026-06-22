@@ -11,8 +11,7 @@ import { ResetDialog } from "./components/ResetDialog.tsx";
 import { clearProgress } from "./lib/storage.ts";
 import { KoanStore } from "./store/koanStore.ts";
 
-// The maple-leaf finale: code-split so its canvas loop only loads once every
-// path is complete (the reward, not an ambient appetizer).
+// Code-split: the canvas loop only loads when a track is finished (reward, not appetizer).
 const FallingLeaves = lazy(() =>
   import("./components/FallingLeaves.tsx").then((m) => ({ default: m.FallingLeaves }))
 );
@@ -26,6 +25,7 @@ function Workspace(): React.JSX.Element {
       activeError,
       showCelebration,
       showResetConfirm,
+      disableLigatures,
       answers,
       langConfig,
       category,
@@ -33,22 +33,28 @@ function Workspace(): React.JSX.Element {
       activeProgressList,
       isPassed,
       nextLessonName,
-      nextLanguageName,
       stage,
       allSolved,
+      availableTracks,
       langProgress,
     },
     {
       setActiveExerciseIndex,
       setShowCelebration,
       setShowResetConfirm,
+      setDisableLigatures,
       handleLanguageChange,
       selectCategory,
       handleInputChange,
       handleInputKeyDown,
       proceedFromCelebration,
+      startLanguageTrack,
     },
   ] = KoanStore.useContainer();
+
+  // Falling leaves: the track-completion reward (while the modal is open) and the
+  // persistent all-paths finale.
+  const showLeaves = allSolved || (showCelebration && stage === "subpath");
 
   return (
     <div className="min-h-screen w-full flex flex-col text-foreground font-sans antialiased relative overflow-x-hidden">
@@ -60,9 +66,11 @@ function Workspace(): React.JSX.Element {
       </a>
 
       <div className="zen-watermark" aria-hidden="true" />
-      {allSolved && (
+      {showLeaves && (
         <Suspense fallback={null}>
-          <FallingLeaves />
+          {/* During the path-complete modal, lift leaves above the overlay blur (below the dialog);
+              the all-paths finale stays ambient behind content. */}
+          <FallingLeaves className={showCelebration && stage === "subpath" ? "z-55" : undefined} />
         </Suspense>
       )}
 
@@ -91,6 +99,7 @@ function Workspace(): React.JSX.Element {
         {exercise && category && (
           <div className="flex flex-col items-center">
             <ExerciseCard
+              key={`${currentLanguage}-${currentCategoryIndex}-${activeExerciseIndex}`}
               exercise={exercise}
               activeExerciseIndex={activeExerciseIndex}
               currentLanguage={currentLanguage}
@@ -98,6 +107,8 @@ function Workspace(): React.JSX.Element {
               answers={answers}
               activeError={activeError}
               isPassed={isPassed}
+              disableLigatures={disableLigatures}
+              onToggleLigatures={setDisableLigatures}
               onInputChange={handleInputChange}
               onInputKeyDown={handleInputKeyDown}
             />
@@ -138,7 +149,8 @@ function Workspace(): React.JSX.Element {
           languageName={langConfig?.name ?? ""}
           categoryName={category?.name ?? ""}
           nextLessonName={nextLessonName}
-          nextLanguageName={nextLanguageName}
+          availableTracks={availableTracks}
+          onStartTrack={startLanguageTrack}
           onProceed={proceedFromCelebration}
         />
 
