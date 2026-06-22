@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select.tsx";
+import { LangIcon } from "./LangIcon.tsx";
 
 type Stage = "lesson" | "subpath" | "all";
 
@@ -89,6 +90,7 @@ export function CelebrationDialog({
               <SelectContent>
                 {availableTracks.map((track) => (
                   <SelectItem key={track.key} value={track.key}>
+                    <LangIcon lang={track.key} className="size-4 shrink-0" />
                     {track.name}
                   </SelectItem>
                 ))}

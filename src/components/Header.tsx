@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/select.tsx";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip.tsx";
 import { KOANS } from "../koans.ts";
+import { LangIcon } from "./LangIcon.tsx";
 
 interface HeaderProps {
   currentLanguage: string;
@@ -50,6 +51,7 @@ export function Header({
             <SelectContent>
               {Object.keys(KOANS).map((langKey) => (
                 <SelectItem key={langKey} value={langKey}>
+                  <LangIcon lang={langKey} className="size-4 shrink-0" />
                   {KOANS[langKey].name}
                 </SelectItem>
               ))}
