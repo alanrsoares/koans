@@ -1,7 +1,7 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { createContainer } from "unstated-next";
-import { evaluateKoan } from "../compiler.ts";
+import { evaluateKoan } from "../compiler/index.ts";
 import { useKoanState } from "../hooks/useKoanState.ts";
 import { KOANS } from "../koans.ts";
 import { playSuccessSound } from "../lib/audio.ts";
