@@ -188,7 +188,7 @@ export default function App(): React.JSX.Element {
       <div className="min-h-screen w-full flex flex-col text-foreground font-sans antialiased relative overflow-x-hidden">
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:border focus:border-(--stone) focus:rounded-md focus:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--ink)"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-white focus:border focus:border-stone focus:rounded-md focus:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
         >
           Skip to main content
         </a>
@@ -210,7 +210,7 @@ export default function App(): React.JSX.Element {
           className="flex-1 max-w-[880px] w-full mx-auto px-6 md:px-10 py-16 flex flex-col justify-center z-10 relative scroll-mt-12"
         >
           <div className="text-center mb-14 select-none">
-            <h2 className="text-4xl text-(--ink) tracking-normal font-brush text-balance leading-tight">
+            <h2 className="text-4xl text-ink tracking-normal font-brush text-balance leading-tight">
               {category?.name}
             </h2>
             <BrushUnderline />
