@@ -12,8 +12,6 @@ import type { AnswersState, ProgressState } from "../types.ts";
 
 export type Stage = "lesson" | "subpath" | "all";
 
-// All koan-app state, persistence, navigation, and verification in one place.
-// Exposed app-wide via KoanStore (unstated-next container).
 function useKoanController() {
   const [currentLanguage, setCurrentLanguage] = useState("javascript");
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
@@ -21,8 +19,6 @@ function useKoanController() {
   const [activeError, setActiveError] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  // Lifted out of ExerciseCard so it survives the per-exercise remount (the remount
-  // is what re-fires the input autofocus).
   const [disableLigatures, setDisableLigatures] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(loadSoundEnabled);
 
