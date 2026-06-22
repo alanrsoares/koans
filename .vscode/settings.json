@@ -1,0 +1,26 @@
+{
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "quickfix.biome": "explicit",
+    "source.organizeImports.biome": "explicit"
+  },
+  "[javascript][javascriptreact][typescript][typescriptreact][json][jsonc][css]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+
+  "eslint.enable": false,
+  "prettier.enable": false,
+
+  "tailwindCSS.experimental.classRegex": [
+    "tw`([^`]*)",
+    "tw\\.\\w+`([^`]*)`",
+    "tw\\([^)]*\\)`([^`]*)`",
+    ["tw\\.\\w+\\s*\\(([^;]*)\\)", "[\"'`]([^\"'`]*)[\"'`]"],
+    ["tw\\.\\w+\\.cva\\s*\\(([^;]*)\\)", "[\"'`]([^\"'`]*)[\"'`]"],
+    ["tw\\([^)]+\\)\\s*\\(([^;]*)\\)", "[\"'`]([^\"'`]*)[\"'`]"],
+    ["cva\\(([^;]*)\\)", "[\"'`]([^\"'`]*)[\"'`]"],
+    ["cn\\(([^;]*)\\)", "[\"'`]([^\"'`]*)[\"'`]"]
+  ],
+  "editor.quickSuggestions": { "strings": true }
+}
