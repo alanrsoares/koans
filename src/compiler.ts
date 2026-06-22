@@ -1,225 +1,242 @@
-import { ResultAsync } from "@onrails/result/compat/neverthrow";
+import { match } from "@onrails/pattern";
+import { errAsync, ResultAsync } from "@onrails/result/compat/neverthrow";
 
-interface Assert {
+type Assert = {
   equal: (actual: unknown, expected: unknown) => void;
   notEqual: (actual: unknown, expected: unknown) => void;
   isTrue: (value: unknown) => void;
   isFalse: (value: unknown) => void;
   deepEqual: (actual: unknown, expected: unknown) => void;
-}
+};
+
+type CompilerError =
+  | { kind: "unsupported"; message: string }
+  | { kind: "failed"; message: string; cause: unknown };
+
+type Language = "javascript" | "typescript" | "clojurescript" | "coffeescript" | "gleam";
+type CompilerPort = { evaluate: (code: string) => Promise<void> };
+
+const GLEAM_CDN =
+  "https://cdn.jsdelivr.net/gh/live-codes/gleam-precompiled@main/build/dev/javascript";
+
+const assert: Assert = {
+  equal: (actual, expected) =>
+    expect(actual === expected, `Expected ${expected} but got ${actual}`),
+  notEqual: (actual, expected) =>
+    expect(actual !== expected, `Expected actual to not equal ${expected}`),
+  isTrue: (value) => expect(value === true, `Expected true but got ${value}`),
+  isFalse: (value) => expect(value === false, `Expected false but got ${value}`),
+  deepEqual: (actual, expected) => {
+    const a = JSON.stringify(actual);
+    const e = JSON.stringify(expected);
+    expect(a === e, `Expected ${e} but got ${a}`);
+  },
+};
+
+const compilers = {
+  javascript: { evaluate: runJavaScript },
+  typescript: { evaluate: runTypeScript },
+  clojurescript: { evaluate: runClojureScript },
+  coffeescript: { evaluate: runCoffeeScript },
+  gleam: { evaluate: runGleam },
+} satisfies Record<Language, CompilerPort>;
 
 export function evaluateKoan(lang: string, userCode: string): ResultAsync<boolean, Error> {
-  return ResultAsync.fromPromise(
-    (async () => {
-      const assert: Assert = {
-        equal: (actual, expected) => {
-          if (actual !== expected) {
-            throw new Error(`Expected ${expected} but got ${actual}`);
-          }
-        },
-        notEqual: (actual, expected) => {
-          if (actual === expected) {
-            throw new Error(`Expected actual to not equal ${expected}`);
-          }
-        },
-        isTrue: (value) => {
-          if (value !== true) {
-            throw new Error(`Expected true but got ${value}`);
-          }
-        },
-        isFalse: (value) => {
-          if (value !== false) {
-            throw new Error(`Expected false but got ${value}`);
-          }
-        },
-        deepEqual: (actual, expected) => {
-          const a = JSON.stringify(actual);
-          const e = JSON.stringify(expected);
-          if (a !== e) {
-            throw new Error(`Expected ${e} but got ${a}`);
-          }
-        },
-      };
+  const compiler = compilerFor(lang);
+  const evaluation = compiler
+    ? ResultAsync.fromPromise(compiler.evaluate(userCode), toCompilerError)
+    : unsupported(lang);
+  return evaluation.map(() => true).mapErr(toError);
+}
 
-      if (lang === "javascript") {
-        const runner = new Function("assert", userCode);
-        runner(assert);
-        return true;
-      }
+function compilerFor(lang: string): CompilerPort | undefined {
+  return match(lang)
+    .returnType<CompilerPort | undefined>()
+    .with("javascript", () => compilers.javascript)
+    .with("typescript", () => compilers.typescript)
+    .with("clojurescript", () => compilers.clojurescript)
+    .with("coffeescript", () => compilers.coffeescript)
+    .with("gleam", () => compilers.gleam)
+    .otherwise(() => undefined);
+}
 
-      if (lang === "typescript") {
-        if (!window.ts) {
-          await loadTypeScript();
-        }
-        if (!window.ts) {
-          throw new Error("TypeScript compiler was not loaded successfully.");
-        }
-        const jsCode = window.ts.transpileModule(userCode, {
-          compilerOptions: {
-            target: window.ts.ScriptTarget.ES2020,
-            module: window.ts.ModuleKind.None,
-          },
-        }).outputText;
+function unsupported(lang: string): ResultAsync<never, CompilerError> {
+  return errAsync({
+    kind: "unsupported",
+    message: `Unsupported language: ${lang}`,
+  });
+}
 
-        const runner = new Function("assert", jsCode);
-        runner(assert);
-        return true;
-      }
+async function runJavaScript(jsCode: string): Promise<void> {
+  new Function("assert", jsCode)(assert);
+}
 
-      if (lang === "clojurescript") {
-        if (!window.squint_compiler) {
-          const squintUrl = "https://cdn.jsdelivr.net/npm/squint-cljs/+esm";
-          const squintCoreUrl = "https://cdn.jsdelivr.net/npm/squint-cljs/core.js/+esm";
-          const squintModule = await import(/* @vite-ignore */ squintUrl);
-          const coreModule = await import(/* @vite-ignore */ squintCoreUrl);
-          window.squint_compiler = squintModule;
-          window.squint_core = coreModule;
-        }
-        if (!window.squint_compiler) {
-          throw new Error("ClojureScript compiler was not loaded successfully.");
-        }
-
-        const compiled = window.squint_compiler.compileString(userCode, {
-          "elide-imports": true,
-          context: "expr",
-        });
-
-        // Squint emits ESM `export { ... }` for top-level defs (e.g. defn), which is
-        // illegal inside eval. Strip exports so multi-form koans run as a plain script.
-        const jsCode = compiled
-          .replace(/^\s*export\s*\{[^}]*\}\s*;?\s*$/gm, "")
-          .replace(/^\s*export\s+/gm, "");
-
-        const result = (0, eval)(jsCode);
-        if (result !== true) {
-          throw new Error(`Expression evaluated to false or non-truthy value: ${result}`);
-        }
-        return true;
-      }
-
-      if (lang === "coffeescript") {
-        if (!window.CoffeeScript) {
-          await loadCoffeeScript();
-        }
-        if (!window.CoffeeScript) {
-          throw new Error("CoffeeScript compiler was not loaded successfully.");
-        }
-        const jsCode = window.CoffeeScript.compile(userCode, { bare: true });
-        const runner = new Function("assert", jsCode);
-        runner(assert);
-        return true;
-      }
-
-      if (lang === "gleam") {
-        if (!window.gleam_compiler) {
-          await loadGleam();
-        }
-        if (!window.gleam_compiler) {
-          throw new Error("Gleam compiler was not loaded successfully.");
-        }
-        window.gleam_compiler.reset_filesystem(1);
-        window.gleam_compiler.write_module(1, "main", userCode);
-
-        try {
-          window.gleam_compiler.compile_package(1, "javascript");
-        } catch (compileErr) {
-          const warningMsgs: string[] = [];
-          let warn: string | undefined;
-          while (window.gleam_compiler && (warn = window.gleam_compiler.pop_warning(1))) {
-            warningMsgs.push(warn);
-          }
-          const details = warningMsgs.join("\n");
-          const errMessage = compileErr instanceof Error ? compileErr.message : String(compileErr);
-          throw new Error(`Gleam Compilation Error:\n${errMessage}\n${details}`, {
-            cause: compileErr,
-          });
-        }
-
-        const jsCode = window.gleam_compiler.read_compiled_javascript(1, "main");
-        if (!jsCode) {
-          throw new Error("Compilation failed: could not generate JavaScript.");
-        }
-
-        const cdnBase =
-          "https://cdn.jsdelivr.net/gh/live-codes/gleam-precompiled@main/build/dev/javascript";
-        const resolvedJs = jsCode
-          // The prelude is imported as gleam.mjs but published as prelude.mjs on the CDN.
-          // Handle it before the generic ../ rewrite, which would map it to a 404.
-          .replace(/from\s+["'][./]*gleam\.mjs["']/g, `from "${cdnBase}/prelude.mjs"`)
-          .replace(
-            /from\s+["']\.\.\/([^"']+)["']/g,
-            (_, pathVal: string) => `from "${cdnBase}/${pathVal}"`
-          );
-
-        const blob = new Blob([resolvedJs], { type: "application/javascript" });
-        const url = URL.createObjectURL(blob);
-        try {
-          const module = await import(/* @vite-ignore */ url);
-          if (typeof module.exercise !== "function") {
-            throw new Error(
-              "Function 'exercise' was not exported. Ensure your template contains 'pub fn exercise()'."
-            );
-          }
-          const result = module.exercise();
-          if (result !== true) {
-            throw new Error(`Expression evaluated to false or non-truthy value: ${result}`);
-          }
-          return true;
-        } finally {
-          URL.revokeObjectURL(url);
-        }
-      }
-
-      throw new Error(`Unsupported language: ${lang}`);
-    })(),
-    (err: unknown) => (err instanceof Error ? err : new Error(String(err), { cause: err }))
+async function runTypeScript(code: string): Promise<void> {
+  const ts = await loadTypeScript();
+  return runJavaScript(
+    ts.transpileModule(code, {
+      compilerOptions: {
+        target: ts.ScriptTarget.ES2020,
+        module: ts.ModuleKind.None,
+      },
+    }).outputText
   );
 }
 
-function loadTypeScript(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/typescript/5.4.5/typescript.min.js";
-    script.onload = () => resolve();
-    script.onerror = (e) =>
-      reject(
-        new Error(
-          "Failed to load TypeScript compiler from CDN. Please check your internet connection.",
-          { cause: e }
-        )
-      );
-    document.head.appendChild(script);
-  });
+async function runClojureScript(code: string): Promise<void> {
+  const squint = await loadSquint();
+  requireTrue(
+    globalThis.eval(
+      stripSquintExports(
+        squint.compileString(code, {
+          "elide-imports": true,
+          context: "expr",
+        })
+      )
+    )
+  );
 }
 
-function loadCoffeeScript(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/coffeescript/2.7.0/coffeescript.min.js";
-    script.onload = () => resolve();
-    script.onerror = (e) =>
-      reject(
-        new Error(
-          "Failed to load CoffeeScript compiler from CDN. Please check your internet connection.",
-          { cause: e }
-        )
-      );
-    document.head.appendChild(script);
-  });
+async function runCoffeeScript(code: string): Promise<void> {
+  const coffee = await loadCoffeeScript();
+  return runJavaScript(coffee.compile(code, { bare: true }));
 }
 
-async function loadGleam(): Promise<void> {
+async function runGleam(code: string): Promise<void> {
+  const gleam = await loadGleam();
+  gleam.reset_filesystem(1);
+  gleam.write_module(1, "main", code);
+  compileGleam(gleam);
+
+  const jsCode = gleam.read_compiled_javascript(1, "main");
+  if (!jsCode) throw new Error("Compilation failed: could not generate JavaScript.");
+
+  const url = URL.createObjectURL(
+    new Blob([resolveGleamImports(jsCode)], { type: "text/javascript" })
+  );
   try {
-    const compilerUrl =
-      "https://cdn.jsdelivr.net/gh/live-codes/gleam-precompiled@main/compiler/v1.3.0/gleam_wasm.js";
-    const wasmUrl =
-      "https://cdn.jsdelivr.net/gh/live-codes/gleam-precompiled@main/compiler/v1.3.0/gleam_wasm_bg.wasm";
-    const module = await import(/* @vite-ignore */ compilerUrl);
-    await module.default(wasmUrl);
-    window.gleam_compiler = module;
-  } catch (err) {
-    throw new Error("Failed to load Gleam WASM compiler. Please check your internet connection.", {
-      cause: err,
-    });
+    const module = await import(/* @vite-ignore */ url);
+    if (typeof module.exercise !== "function") {
+      throw new Error(
+        "Function 'exercise' was not exported. Ensure your template contains 'pub fn exercise()'."
+      );
+    }
+    requireTrue(module.exercise());
+  } finally {
+    URL.revokeObjectURL(url);
   }
 }
+
+async function loadTypeScript(): Promise<TypeScriptCompiler> {
+  if (!window.ts) {
+    await loadScript(
+      "https://cdnjs.cloudflare.com/ajax/libs/typescript/5.4.5/typescript.min.js",
+      "TypeScript"
+    );
+  }
+  return required(window.ts, "TypeScript compiler was not loaded successfully.");
+}
+
+async function loadCoffeeScript(): Promise<CoffeeScriptCompiler> {
+  if (!window.CoffeeScript) {
+    await loadScript(
+      "https://cdnjs.cloudflare.com/ajax/libs/coffeescript/2.7.0/coffeescript.min.js",
+      "CoffeeScript"
+    );
+  }
+  return required(window.CoffeeScript, "CoffeeScript compiler was not loaded successfully.");
+}
+
+async function loadSquint(): Promise<SquintCompiler> {
+  if (window.squint_compiler) return window.squint_compiler;
+
+  const squintUrl = "https://cdn.jsdelivr.net/npm/squint-cljs/+esm";
+  const coreUrl = "https://cdn.jsdelivr.net/npm/squint-cljs/core.js/+esm";
+  const [squint, core] = await Promise.all([
+    import(/* @vite-ignore */ squintUrl),
+    import(/* @vite-ignore */ coreUrl),
+  ]);
+  window.squint_compiler = squint as SquintCompiler;
+  window.squint_core = core;
+  return window.squint_compiler;
+}
+
+async function loadGleam(): Promise<GleamCompiler> {
+  if (window.gleam_compiler) return window.gleam_compiler;
+
+  const compilerUrl =
+    "https://cdn.jsdelivr.net/gh/live-codes/gleam-precompiled@main/compiler/v1.3.0/gleam_wasm.js";
+  const wasmUrl =
+    "https://cdn.jsdelivr.net/gh/live-codes/gleam-precompiled@main/compiler/v1.3.0/gleam_wasm_bg.wasm";
+  const module = (await import(/* @vite-ignore */ compilerUrl)) as GleamCompiler;
+  await module.default(wasmUrl);
+  window.gleam_compiler = module;
+  return module;
+}
+
+async function loadScript(src: string, tool: string): Promise<void> {
+  try {
+    return await new Promise<void>((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.onload = () => resolve();
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  } catch (cause) {
+    throw new Error(`Failed to load ${tool} compiler from CDN.`, { cause });
+  }
+}
+
+function compileGleam(gleam: GleamCompiler): void {
+  try {
+    gleam.compile_package(1, "javascript");
+  } catch (cause) {
+    const warnings = drainGleamWarnings(gleam).join("\n");
+    throw new Error(`Gleam Compilation Error:\n${messageOf(cause)}\n${warnings}`, { cause });
+  }
+}
+
+function drainGleamWarnings(gleam: GleamCompiler): string[] {
+  const warnings: string[] = [];
+  for (let warning = gleam.pop_warning(1); warning; warning = gleam.pop_warning(1)) {
+    warnings.push(warning);
+  }
+  return warnings;
+}
+
+const stripSquintExports = (jsCode: string): string =>
+  jsCode.replace(/^\s*export\s*\{[^}]*\}\s*;?\s*$/gm, "").replace(/^\s*export\s+/gm, "");
+
+const resolveGleamImports = (jsCode: string): string =>
+  jsCode
+    .replace(/from\s+["'][./]*gleam\.mjs["']/g, `from "${GLEAM_CDN}/prelude.mjs"`)
+    .replace(/from\s+["']\.\.\/([^"']+)["']/g, (_, path: string) => `from "${GLEAM_CDN}/${path}"`);
+
+function requireTrue(result: unknown): void {
+  expect(result === true, `Expression evaluated to false or non-truthy value: ${result}`);
+}
+
+function expect(condition: boolean, message: string): void {
+  if (!condition) throw new Error(message);
+}
+
+function required<T>(value: T | undefined, message: string): T {
+  if (value === undefined) throw new Error(message);
+  return value;
+}
+
+const toCompilerError = (cause: unknown): CompilerError => ({
+  kind: "failed",
+  message: messageOf(cause),
+  cause,
+});
+
+const toError = (error: CompilerError): Error =>
+  match(error)
+    .with({ kind: "failed" }, (e) => new Error(e.message, { cause: e.cause }))
+    .with({ kind: "unsupported" }, (e) => new Error(e.message))
+    .exhaustive();
+
+const messageOf = (cause: unknown): string =>
+  cause instanceof Error ? cause.message : String(cause);
