@@ -79,10 +79,16 @@ export function evaluateKoan(lang: string, userCode: string): ResultAsync<boolea
           throw new Error("ClojureScript compiler was not loaded successfully.");
         }
 
-        const jsCode = window.squint_compiler.compileString(userCode, {
+        const compiled = window.squint_compiler.compileString(userCode, {
           "elide-imports": true,
           context: "expr",
         });
+
+        // Squint emits ESM `export { ... }` for top-level defs (e.g. defn), which is
+        // illegal inside eval. Strip exports so multi-form koans run as a plain script.
+        const jsCode = compiled
+          .replace(/^\s*export\s*\{[^}]*\}\s*;?\s*$/gm, "")
+          .replace(/^\s*export\s+/gm, "");
 
         const result = (0, eval)(jsCode);
         if (result !== true) {
