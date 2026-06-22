@@ -87,7 +87,8 @@ export function CelebrationDialog({
               <SelectTrigger className="w-full bg-white border-stone text-ink font-bold cursor-pointer focus-visible:ring-2 focus-visible:ring-ink focus-visible:outline-none">
                 <SelectValue placeholder="Choose a path…" />
               </SelectTrigger>
-              <SelectContent>
+              {/* Above the dialog content (z-60); the default SelectContent z-50 sits behind it. */}
+              <SelectContent className="z-70">
                 {availableTracks.map((track) => (
                   <SelectItem key={track.key} value={track.key}>
                     <LangIcon lang={track.key} className="size-4 shrink-0" />
