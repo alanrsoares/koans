@@ -1,10 +1,65 @@
 import { match } from "@onrails/pattern";
+import tw from "@styled-cva/react";
 import type React from "react";
 import { useEffect, useRef } from "react";
-import { cn } from "@/lib/utils.ts";
 import type { Exercise } from "../koans.ts";
 import { type Token, tokenize } from "../tokenizer.ts";
 import type { AnswersState } from "../types.ts";
+
+const Contemplation = tw.p`
+  mb-9 max-w-[600px] animate-fadeIn text-center font-serif text-lg leading-relaxed
+  text-foreground text-pretty wrap-break-word
+`;
+
+// The stone resting on the sand; reddens and shakes when the answer is wrong.
+const KoanCard = tw.div(
+  "koan-card relative my-4 w-full max-w-[640px] rounded-2xl border border-stone bg-[oklch(0.99_0.004_74)] px-8 py-10 shadow-[0_10px_36px_-16px_oklch(0.26_0.008_40/0.22)] transition-[border-color,box-shadow] duration-300",
+  {
+    variants: {
+      $error: {
+        true: "border-(--maple)/50 shadow-[0_10px_36px_-16px_oklch(0.52_0.16_32/0.3)] animate-shake",
+        false: "",
+      },
+    },
+    defaultVariants: { $error: false },
+  }
+);
+
+// Hanko seal stamped on a solved koan.
+const HankoSeal = tw.span`
+  absolute -top-4 -right-3 flex size-12 animate-seal items-center justify-center
+  rounded-lg bg-maple font-display text-2xl text-[oklch(0.97_0.012_70)]
+  shadow-[0_6px_16px_-4px_oklch(0.52_0.16_32/0.45)] select-none
+`;
+
+const CodeBlock = tw.div(
+  "mx-auto w-fit min-w-[3ch] max-w-full overflow-x-auto font-mono text-base leading-loose whitespace-pre select-text",
+  {
+    variants: {
+      $noLigatures: { true: "[font-variant-ligatures:none]", false: "" },
+    },
+    defaultVariants: { $noLigatures: false },
+  }
+);
+
+const KoanInput = tw.input(
+  "koan-input mx-1 box-content min-w-[3ch] rounded-md px-2 py-0.5 text-center align-middle font-mono text-base font-bold text-ink transition-[border-color,background-color,box-shadow] duration-200 focus-visible:outline-none",
+  {
+    variants: {
+      $passed: {
+        true: "pointer-events-none border border-solid border-stone bg-[oklch(0.93_0.012_74)]",
+        false:
+          "border border-dashed border-stone bg-[oklch(0.96_0.01_74)] focus-visible:border-maple focus-visible:bg-white focus-visible:shadow-[0_0_0_3px_oklch(0.52_0.16_32/0.14)]",
+      },
+    },
+    defaultVariants: { $passed: false },
+  }
+);
+
+const LigatureToggle = tw.label`
+  mt-6 flex cursor-pointer items-center justify-end gap-2 border-t border-(--stone)/40
+  pt-3 text-[10px] font-medium tracking-wider text-muted-foreground uppercase select-none
+`;
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -92,17 +147,12 @@ export function ExerciseCard({
           "";
 
         nodes.push(
-          <input
+          <KoanInput
             key={idx}
+            $passed={isPassed}
             type="text"
             name={`blank-${currentBlankIndex}`}
             aria-label={`Blank ${currentBlankIndex + 1}`}
-            className={cn(
-              "font-mono text-base align-middle box-content mx-1 rounded-md px-2 py-0.5 text-center font-bold text-ink koan-input transition-[border-color,background-color,box-shadow] duration-200 focus-visible:outline-none min-w-[3ch]",
-              isPassed
-                ? "border border-solid border-stone bg-[oklch(0.93_0.012_74)] pointer-events-none"
-                : "border border-dashed border-stone bg-[oklch(0.96_0.01_74)] focus-visible:border-maple focus-visible:bg-white focus-visible:shadow-[0_0_0_3px_oklch(0.52_0.16_32/0.14)]"
-            )}
             style={{ width: `${Math.max(3, val.length)}ch` }}
             value={val}
             disabled={isPassed}
@@ -133,49 +183,24 @@ export function ExerciseCard({
   }
 
   return (
-    <div ref={cardRef} className="flex flex-col items-center w-full">
-      {/* Contemplation Text */}
-      <p className="text-lg text-foreground font-serif text-center leading-relaxed max-w-[600px] mb-9 wrap-break-word text-pretty animate-fadeIn">
-        {exercise.description}
-      </p>
+    <div ref={cardRef} className="flex w-full flex-col items-center">
+      <Contemplation>{exercise.description}</Contemplation>
 
-      {/* Koan: a stone resting on the sand */}
-      <div
-        className={cn(
-          "relative w-full max-w-[640px] bg-[oklch(0.99_0.004_74)] border border-stone rounded-2xl shadow-[0_10px_36px_-16px_oklch(0.26_0.008_40/0.22)] px-8 py-10 my-4 transition-[border-color,box-shadow] duration-300 koan-card",
-          activeError &&
-            "border-(--maple)/50 shadow-[0_10px_36px_-16px_oklch(0.52_0.16_32/0.3)] animate-shake"
-        )}
-      >
-        {/* Hanko seal stamped on a solved koan */}
-        {isPassed && (
-          <span
-            className="absolute -top-4 -right-3 size-12 rounded-lg bg-maple text-[oklch(0.97_0.012_70)] flex items-center justify-center text-2xl font-display shadow-[0_6px_16px_-4px_oklch(0.52_0.16_32/0.45)] animate-seal select-none"
-            aria-hidden="true"
-          >
-            禅
-          </span>
-        )}
-        <div
-          className={cn(
-            "w-fit min-w-[3ch] mx-auto font-mono text-base leading-loose whitespace-pre select-text overflow-x-auto max-w-full",
-            disableLigatures && "[font-variant-ligatures:none]"
-          )}
-        >
-          {renderCodeTokenized()}
-        </div>
+      <KoanCard $error={Boolean(activeError)}>
+        {isPassed && <HankoSeal aria-hidden="true">禅</HankoSeal>}
 
-        {/* Ligature toggle */}
-        <label className="mt-6 pt-3 border-t border-(--stone)/40 flex items-center justify-end gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none">
+        <CodeBlock $noLigatures={disableLigatures}>{renderCodeTokenized()}</CodeBlock>
+
+        <LigatureToggle>
           <input
             type="checkbox"
             checked={disableLigatures}
             onChange={(e) => onToggleLigatures(e.target.checked)}
-            className="size-3.5 accent-maple cursor-pointer"
+            className="size-3.5 cursor-pointer accent-maple"
           />
           Ligatures {disableLigatures ? "on" : "off"}
-        </label>
-      </div>
+        </LigatureToggle>
+      </KoanCard>
     </div>
   );
 }
