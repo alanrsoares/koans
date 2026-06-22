@@ -9,7 +9,7 @@ import { Header } from "./components/Header.tsx";
 import { LessonControls } from "./components/LessonControls.tsx";
 import { ResetDialog } from "./components/ResetDialog.tsx";
 import { clearProgress } from "./lib/storage.ts";
-import { KoanStore } from "./store/koanStore.ts";
+import { KoanProvider, useKoanStore } from "./store/koanStore.ts";
 
 // Code-split: the canvas loop only loads when a track is finished (reward, not appetizer).
 const FallingLeaves = lazy(() =>
@@ -32,7 +32,7 @@ function Workspace(): React.JSX.Element {
       proceedFromCelebration,
       startLanguageTrack,
     },
-  ] = KoanStore.useContainer();
+  ] = useKoanStore();
 
   // Falling leaves: the track-completion reward (while the modal is open) and the
   // persistent all-paths finale.
@@ -150,10 +150,10 @@ function Workspace(): React.JSX.Element {
 
 export default function App(): React.JSX.Element {
   return (
-    <KoanStore.Provider>
+    <KoanProvider>
       <TooltipProvider>
         <Workspace />
       </TooltipProvider>
-    </KoanStore.Provider>
+    </KoanProvider>
   );
 }

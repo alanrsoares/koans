@@ -11,31 +11,41 @@ export type CompilerAdapter = {
   evaluate: (code: string) => Promise<void>;
 };
 
-type Assert = {
-  equal: (actual: unknown, expected: unknown) => void;
-  notEqual: (actual: unknown, expected: unknown) => void;
-  isTrue: (value: unknown) => void;
-  isFalse: (value: unknown) => void;
-  deepEqual: (actual: unknown, expected: unknown) => void;
-};
+// Hard cap on user-code execution. Koan logic runs in microseconds; anything
+// approaching this is a runaway loop, so we terminate the worker and surface it.
+const EVAL_TIMEOUT_MS = 4000;
 
-const assert: Assert = {
-  equal: (actual, expected) =>
-    expect(actual === expected, `Expected ${expected} but got ${actual}`),
-  notEqual: (actual, expected) =>
-    expect(actual !== expected, `Expected actual to not equal ${expected}`),
-  isTrue: (value) => expect(value === true, `Expected true but got ${value}`),
-  isFalse: (value) => expect(value === false, `Expected false but got ${value}`),
-  deepEqual: (actual, expected) => {
-    const a = JSON.stringify(actual);
-    const e = JSON.stringify(expected);
-    expect(a === e, `Expected ${e} but got ${a}`);
-  },
-};
+type WorkerResponse = { ok: true } | { ok: false; error: string };
 
-export const runJavaScript = async (jsCode: string): Promise<void> => {
-  new Function("assert", jsCode)(assert);
-};
+// Run compiled JS in a throwaway Web Worker: sandboxed from the DOM and
+// terminable if it hangs. Resolves on success, rejects with the assertion or
+// runtime error message (or a timeout) on failure. Used by every language that
+// compiles to plain JS (JavaScript, TypeScript, CoffeeScript, Civet).
+export function runJavaScript(jsCode: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL("./sandbox.worker.ts", import.meta.url), {
+      type: "module",
+    });
+
+    const finish = (fn: () => void) => {
+      clearTimeout(timer);
+      worker.terminate();
+      fn();
+    };
+
+    const timer = setTimeout(
+      () => finish(() => reject(new Error("Evaluation timed out — check for an infinite loop."))),
+      EVAL_TIMEOUT_MS
+    );
+
+    worker.onmessage = ({ data }: MessageEvent<WorkerResponse>) =>
+      finish(() => (data.ok ? resolve() : reject(new Error(data.error))));
+    worker.onerror = (event) =>
+      finish(() => reject(new Error(event.message || "Sandbox worker failed.")));
+
+    worker.postMessage({ code: jsCode });
+  });
+}
 
 export function requireTrue(result: unknown): void {
   expect(result === true, `Expression evaluated to false or non-truthy value: ${result}`);

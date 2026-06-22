@@ -259,4 +259,4 @@ function useKoanController() {
   return [state, actions] as const;
 }
 
-export const KoanStore = createContainer(useKoanController);
+export const { Provider: KoanProvider, useContainer: useKoanStore } = createContainer(useKoanController);
