@@ -1,4 +1,4 @@
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,
@@ -67,8 +67,20 @@ export function CelebrationDialog({
         showCloseButton={false}
       >
         <DialogHeader className="flex flex-col items-center gap-3">
+          {/* Ensō — the brush circle of completion and wholeness (also the app's mark). */}
           <div className="text-maple mb-1">
-            <Sparkles className="size-11 mx-auto" aria-hidden="true" />
+            <svg
+              viewBox="0 0 100 100"
+              className="size-12 mx-auto"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={8}
+              strokeLinecap="round"
+              role="img"
+              aria-hidden="true"
+            >
+              <path d="M50 16 A34 34 0 1 1 30 25" transform="rotate(-18 50 50)" />
+            </svg>
           </div>
           <DialogTitle
             id="celebration-title"
