@@ -1,0 +1,233 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@theme inline {
+  --font-serif: "Lora Variable", Georgia, serif;
+  --font-display: "Zen Old Mincho", Georgia, serif;
+  --font-brush: "Yuji Syuku", "Zen Old Mincho", Georgia, serif;
+  --font-sans:
+    "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  --font-mono:
+    "Geist Mono Variable", SFMono-Regular, Consolas, "Liberation Mono", Menlo,
+    monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  /* custom colors */
+  --color-ink: var(--ink);
+  --color-sand: var(--sand);
+  --color-stone: var(--stone);
+  --color-maple: var(--maple);
+  --color-sakura: var(--sakura);
+  --color-syntax-keyword: var(--syntax-keyword);
+  --color-syntax-string: var(--syntax-string);
+  --color-syntax-number: var(--syntax-number);
+
+  --color-ring: var(--ring);
+  --color-border: var(--border);
+  --color-input: var(--input);
+}
+
+:root {
+  --background: oklch(0.938 0.009 73.6);
+  --foreground: oklch(0.27 0.006 20);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.27 0.006 20);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.27 0.006 20);
+
+  --primary: oklch(0.2 0.005 20);
+  --primary-foreground: oklch(0.938 0.009 73.6);
+
+  --muted: oklch(0.91 0.012 75);
+  --muted-foreground: oklch(0.52 0.015 72);
+
+  --accent: oklch(0.83 0.027 80);
+  --accent-foreground: oklch(0.2 0.005 20);
+
+  --ring: oklch(0.2 0.005 20);
+
+  --border: oklch(0.27 0.006 20 / 0.1);
+  --input: oklch(0.27 0.006 20 / 0.15);
+
+  --radius: 0.5rem;
+
+  /* Material palette: stone, sand, blackened wood, sakura, japanese maple. */
+  --ink: oklch(0.26 0.008 40); /* sumi ink / blackened wood */
+  --sand: oklch(0.91 0.013 74); /* raked sand, second neutral layer */
+  --stone: oklch(0.8 0.016 70); /* stone neutral */
+  --maple: oklch(0.52 0.16 32); /* japanese maple / vermilion seal */
+  --sakura: oklch(0.83 0.055 8); /* soft sakura */
+
+  /* Sumi-e syntax palette: muted, warm, low-chroma so code sits inside the
+     paper scene instead of fighting it. Tuned for the white card surface. */
+  --syntax-keyword: oklch(0.47 0.12 34); /* clay red */
+  --syntax-string: oklch(0.5 0.07 145); /* moss */
+  --syntax-number: oklch(0.52 0.09 68); /* ochre */
+  --syntax-symbol: oklch(0.49 0.08 318); /* dusty plum */
+  --syntax-accent: oklch(
+    0.5 0.07 245
+  ); /* dusty indigo: parens + active answer */
+  --syntax-builtin: oklch(0.33 0.012 50); /* warm ink */
+  --syntax-comment: oklch(0.58 0.012 70); /* warm gray, de-emphasized */
+  --syntax-punct: oklch(0.46 0.012 50); /* muted brown-gray */
+  --syntax-text: oklch(0.34 0.008 40); /* warm near-black */
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Linen / paper grain: faint fibrous texture over the whole surface. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Zen circle watermark */
+.zen-watermark {
+  position: fixed;
+  bottom: 0px;
+  right: 0px;
+  width: 48vw;
+  height: 48vw;
+  max-width: 500px;
+  max-height: 500px;
+  background-image: url("https://clojurescriptkoans.com/images/zencircle.png");
+  background-repeat: no-repeat;
+  background-position: bottom right;
+  background-size: contain;
+  opacity: 0.16;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Scrollbar customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(60, 53, 53, 0.15);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(60, 53, 53, 0.3);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Hanko seal: presses in like a stamp, slight overshoot then settle. */
+@keyframes sealStamp {
+  0% {
+    opacity: 0;
+    transform: scale(1.6) rotate(-12deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.92) rotate(-8deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-8deg);
+  }
+}
+
+.animate-seal {
+  animation: sealStamp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-delay: 0s !important;
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}
