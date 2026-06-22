@@ -29,9 +29,15 @@ export default function App(): React.JSX.Element {
   const [activeError, setActiveError] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState<boolean>(false);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
-  const [pathComplete, setPathComplete] = useState<boolean>(false);
 
   const { progress, answers, saveState } = useKoanState();
+
+  // A subpath (language) is solved when every one of its lessons is solved.
+  const isLangSolved = useCallback(
+    (lang: string, prog: ProgressState = progress) =>
+      KOANS[lang].categories.every((c) => (prog[lang]?.[c.name] ?? []).every(Boolean)),
+    [progress]
+  );
   const workspaceRef = useRef<HTMLDivElement>(null);
 
   // Move to the first unsolved koan whenever the language or lesson changes.
@@ -64,7 +70,6 @@ export default function App(): React.JSX.Element {
     setCurrentCategoryIndex(0);
     setActiveError(null);
     setShowCelebration(false);
-    setPathComplete(false);
   };
 
   const selectCategory = (index: number) => {
@@ -115,15 +120,10 @@ export default function App(): React.JSX.Element {
 
     const progressList = updatedProgress[lang][category.name];
     if (progressList.every(Boolean)) {
-      const langSolved = KOANS[lang].categories.every((c) =>
-        updatedProgress[lang][c.name]?.every(Boolean)
-      );
       setShowCelebration(true);
-      if (langSolved) {
-        setPathComplete(true); // maple-leaf finale (lazy-loaded)
-      } else {
-        triggerCanvasConfetti(); // lighter per-lesson reward
-      }
+      // Maple leaves are the all-paths finale; everything short of that gets confetti.
+      const everythingSolved = Object.keys(KOANS).every((l) => isLangSolved(l, updatedProgress));
+      if (!everythingSolved) triggerCanvasConfetti();
     } else {
       const nextIncomplete = progressList.indexOf(false);
       if (nextIncomplete !== -1) {
@@ -168,14 +168,31 @@ export default function App(): React.JSX.Element {
     }
   };
 
-  const proceedToNextLesson = () => {
-    setShowCelebration(false);
-    if (pathComplete) return; // the leaves finale stays on screen
-    const categories = KOANS[currentLanguage]?.categories || [];
-    const nextIncomplete = categories.findIndex(
-      (c) => !(progress[currentLanguage]?.[c.name] || []).every(Boolean)
+  const firstIncompleteCategory = (lang: string) =>
+    (KOANS[lang]?.categories || []).findIndex(
+      (c) => !(progress[lang]?.[c.name] || []).every(Boolean)
     );
-    if (nextIncomplete !== -1) selectCategory(nextIncomplete);
+
+  const proceedFromCelebration = () => {
+    setShowCelebration(false);
+
+    // Everything solved → the leaves finale stays; nowhere to go.
+    if (Object.keys(KOANS).every((l) => isLangSolved(l))) return;
+
+    // Current subpath solved → chain to the next unsolved subpath (language).
+    if (isLangSolved(currentLanguage)) {
+      const nextLang = Object.keys(KOANS).find((l) => !isLangSolved(l));
+      if (nextLang) {
+        setCurrentLanguage(nextLang);
+        setCurrentCategoryIndex(Math.max(0, firstIncompleteCategory(nextLang)));
+        setActiveError(null);
+      }
+      return;
+    }
+
+    // Otherwise advance to the next unsolved lesson in this subpath.
+    const next = firstIncompleteCategory(currentLanguage);
+    if (next !== -1) selectCategory(next);
   };
 
   const langConfig = KOANS[currentLanguage];
@@ -186,12 +203,20 @@ export default function App(): React.JSX.Element {
   const isPassed = activeProgressList[activeExerciseIndex] === true;
 
   const nextLessonName = (() => {
-    const categories = langConfig?.categories || [];
-    const idx = categories.findIndex(
-      (c) => !(progress[currentLanguage]?.[c.name] || []).every(Boolean)
-    );
-    return idx === -1 ? null : categories[idx].name;
+    const idx = firstIncompleteCategory(currentLanguage);
+    return idx === -1 ? null : langConfig.categories[idx].name;
   })();
+
+  // Completion stage drives both the celebration dialog and the leaves finale.
+  const allSolved = Object.keys(KOANS).every((l) => isLangSolved(l));
+  const subpathSolved = isLangSolved(currentLanguage);
+  const stage: "lesson" | "subpath" | "all" = allSolved
+    ? "all"
+    : subpathSolved
+      ? "subpath"
+      : "lesson";
+  const nextLanguageKey = Object.keys(KOANS).find((l) => !isLangSolved(l));
+  const nextLanguageName = nextLanguageKey ? KOANS[nextLanguageKey].name : null;
 
   const langProgress = (() => {
     const categories = langConfig?.categories || [];
@@ -214,7 +239,7 @@ export default function App(): React.JSX.Element {
         </a>
 
         <div className="zen-watermark" aria-hidden="true" />
-        {pathComplete && (
+        {allSolved && (
           <Suspense fallback={null}>
             <FallingLeaves />
           </Suspense>
@@ -289,11 +314,12 @@ export default function App(): React.JSX.Element {
           <CelebrationDialog
             open={showCelebration}
             onOpenChange={setShowCelebration}
-            pathComplete={pathComplete}
+            stage={stage}
             languageName={langConfig?.name ?? ""}
             categoryName={category?.name ?? ""}
             nextLessonName={nextLessonName}
-            onProceed={proceedToNextLesson}
+            nextLanguageName={nextLanguageName}
+            onProceed={proceedFromCelebration}
           />
 
           <ResetDialog
