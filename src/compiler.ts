@@ -140,12 +140,16 @@ export function evaluateKoan(lang: string, userCode: string): ResultAsync<boolea
           throw new Error("Compilation failed: could not generate JavaScript.");
         }
 
-        const resolvedJs = jsCode.replace(
-          /from\s+["']\.\.\/([^"']+)["']/g,
-          (_, pathVal: string) => {
-            return `from "https://cdn.jsdelivr.net/gh/live-codes/gleam-precompiled@main/build/dev/javascript/${pathVal}"`;
-          }
-        );
+        const cdnBase =
+          "https://cdn.jsdelivr.net/gh/live-codes/gleam-precompiled@main/build/dev/javascript";
+        const resolvedJs = jsCode
+          // The prelude is imported as gleam.mjs but published as prelude.mjs on the CDN.
+          // Handle it before the generic ../ rewrite, which would map it to a 404.
+          .replace(/from\s+["'][./]*gleam\.mjs["']/g, `from "${cdnBase}/prelude.mjs"`)
+          .replace(
+            /from\s+["']\.\.\/([^"']+)["']/g,
+            (_, pathVal: string) => `from "${cdnBase}/${pathVal}"`
+          );
 
         const blob = new Blob([resolvedJs], { type: "application/javascript" });
         const url = URL.createObjectURL(blob);
