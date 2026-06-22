@@ -7,11 +7,10 @@
   --font-display: "Zen Old Mincho", Georgia, serif;
   --font-brush: "Yuji Syuku", "Zen Old Mincho", Georgia, serif;
   --font-sans:
-    "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
+    "Geist Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
   --font-mono:
-    "Geist Mono Variable", SFMono-Regular, Consolas, "Liberation Mono", Menlo,
-    monospace;
+    "JetBrains Mono Variable", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -31,6 +30,10 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
 
+  --color-ring: var(--ring);
+  --color-border: var(--border);
+  --color-input: var(--input);
+
   /* custom colors */
   --color-ink: var(--ink);
   --color-sand: var(--sand);
@@ -41,9 +44,15 @@
   --color-syntax-string: var(--syntax-string);
   --color-syntax-number: var(--syntax-number);
 
-  --color-ring: var(--ring);
-  --color-border: var(--border);
-  --color-input: var(--input);
+  /* syntax colors */
+  --color-syntax-keyword: var(--syntax-keyword);
+  --color-syntax-string: var(--syntax-string);
+  --color-syntax-number: var(--syntax-number);
+  --color-syntax-symbol: var(--syntax-symbol);
+  --color-syntax-accent: var(--syntax-accent);
+  --color-syntax-builtin: var(--syntax-builtin);
+  --color-syntax-comment: var(--syntax-comment);
+  --color-syntax-punct: var(--syntax-punct);
 }
 
 :root {
@@ -85,9 +94,7 @@
   --syntax-string: oklch(0.5 0.07 145); /* moss */
   --syntax-number: oklch(0.52 0.09 68); /* ochre */
   --syntax-symbol: oklch(0.49 0.08 318); /* dusty plum */
-  --syntax-accent: oklch(
-    0.5 0.07 245
-  ); /* dusty indigo: parens + active answer */
+  --syntax-accent: oklch(0.5 0.07 245); /* dusty indigo: parens + active answer */
   --syntax-builtin: oklch(0.33 0.012 50); /* warm ink */
   --syntax-comment: oklch(0.58 0.012 70); /* warm gray, de-emphasized */
   --syntax-punct: oklch(0.46 0.012 50); /* muted brown-gray */

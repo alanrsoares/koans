@@ -3,7 +3,7 @@ import type React from "react";
 import { useState } from "react";
 import { cn } from "@/lib/utils.ts";
 import type { Exercise } from "../koans.ts";
-import { tokenize } from "../tokenizer.ts";
+import { type Token, tokenize } from "../tokenizer.ts";
 import type { AnswersState } from "../types.ts";
 
 interface ExerciseCardProps {
@@ -33,25 +33,56 @@ export function ExerciseCard({
   onInputChange,
   onInputKeyDown,
 }: ExerciseCardProps) {
-  // Coding ligatures (===, =>) overlap when the tokenizer splits operators across
-  // per-char spans, so default to off. Reader can re-enable per taste.
-  const [disableLigatures, setDisableLigatures] = useState(true);
+  // Ligatures on by default; reader can opt into plain operators if the tokenizer's
+  // per-char spans make ligated glyphs (===, =>) overlap.
+  const [disableLigatures, setDisableLigatures] = useState(false);
 
-  // Helper to render code line tokenized inside React
+  // Tailwind class for a token's syntax color.
+  function colorFor(token: Token): string {
+    return match(token.type)
+      .with("keyword", () => "text-syntax-keyword font-bold")
+      .with("string", () => "text-syntax-string")
+      .with("comment", () => "text-syntax-comment italic")
+      .with("builtin", () => "text-syntax-builtin font-semibold")
+      .with("number", () => "text-syntax-number")
+      .with("symbol", () => "text-syntax-symbol")
+      .with("punctuation", () =>
+        token.value === "(" || token.value === ")"
+          ? "text-syntax-accent font-bold"
+          : "text-syntax-punct"
+      )
+      .otherwise(() => "text-syntax-text");
+  }
+
+  // Render the template, coalescing adjacent same-color tokens into one span so
+  // operator glyphs (===, =>) stay in a single text run and ligate correctly
+  // instead of overlapping. Blanks break the run and become inputs.
   function renderCodeTokenized() {
     const tokens = tokenize(exercise.template, currentLanguage);
+    const nodes: React.ReactNode[] = [];
     let blankCounter = 0;
+    let run: { className: string; text: string } | null = null;
 
-    return tokens.map((token, idx) => {
+    const flush = (key: string) => {
+      if (run) {
+        nodes.push(
+          <span key={key} className={run.className}>
+            {run.text}
+          </span>
+        );
+        run = null;
+      }
+    };
+
+    tokens.forEach((token, idx) => {
       if (token.type === "blank") {
-        const currentBlankIndex = blankCounter;
-        blankCounter++;
-
+        flush(`run-${idx}`);
+        const currentBlankIndex = blankCounter++;
         const val =
           answers[currentLanguage]?.[categoryName]?.[activeExerciseIndex]?.[currentBlankIndex] ||
           "";
 
-        return (
+        nodes.push(
           <input
             key={idx}
             type="text"
@@ -76,28 +107,20 @@ export function ExerciseCard({
             spellCheck={false}
           />
         );
+        return;
       }
 
-      const colorClass = match(token.type)
-        .with("keyword", () => "text-[var(--syntax-keyword)] font-bold")
-        .with("string", () => "text-[var(--syntax-string)]")
-        .with("comment", () => "text-[var(--syntax-comment)] italic")
-        .with("builtin", () => "text-[var(--syntax-builtin)] font-semibold")
-        .with("number", () => "text-[var(--syntax-number)]")
-        .with("symbol", () => "text-[var(--syntax-symbol)]")
-        .with("punctuation", () =>
-          token.value === "(" || token.value === ")"
-            ? "text-[var(--syntax-accent)] font-bold"
-            : "text-[var(--syntax-punct)]"
-        )
-        .otherwise(() => "text-[var(--syntax-text)]");
-
-      return (
-        <span key={idx} className={colorClass}>
-          {token.value}
-        </span>
-      );
+      const className = colorFor(token);
+      if (run && run.className === className) {
+        run.text += token.value;
+      } else {
+        flush(`run-${idx}`);
+        run = { className, text: token.value };
+      }
     });
+
+    flush("run-end");
+    return nodes;
   }
 
   return (
@@ -112,7 +135,7 @@ export function ExerciseCard({
         className={cn(
           "relative w-full max-w-[640px] bg-[oklch(0.99_0.004_74)] border border-stone rounded-2xl shadow-[0_10px_36px_-16px_oklch(0.26_0.008_40/0.22)] px-8 py-10 my-4 transition-[border-color,box-shadow] duration-300 koan-card",
           activeError &&
-          "border-(--maple)/50 shadow-[0_10px_36px_-16px_oklch(0.52_0.16_32/0.3)] animate-shake"
+            "border-(--maple)/50 shadow-[0_10px_36px_-16px_oklch(0.52_0.16_32/0.3)] animate-shake"
         )}
       >
         {/* Hanko seal stamped on a solved koan */}
