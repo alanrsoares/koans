@@ -503,7 +503,8 @@ export const KOANS: KoanData = {
           },
           {
             description: "Spread expands an array into a new one. Add the missing element.",
-            template: "nums := [1, 2, 3]\nmore := [...nums, __]\nassert.deepEqual(more, [1, 2, 3, 4])",
+            template:
+              "nums := [1, 2, 3]\nmore := [...nums, __]\nassert.deepEqual(more, [1, 2, 3, 4])",
           },
         ],
       },

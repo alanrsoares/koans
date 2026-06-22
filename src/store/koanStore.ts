@@ -1,3 +1,4 @@
+import { isErr } from "@onrails/result";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { createContainer } from "unstated-next";
@@ -86,7 +87,7 @@ function useKoanController() {
     );
 
     const evaluation = await evaluateKoan(lang, code);
-    if (!evaluation.isOk()) {
+    if (isErr(evaluation)) {
       setActiveError(evaluation.error.message);
       return;
     }
