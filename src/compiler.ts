@@ -33,6 +33,10 @@ const assert: Assert = {
   },
 };
 
+const runJavaScript = async (jsCode: string): Promise<void> => {
+  new Function("assert", jsCode)(assert);
+};
+
 const compilers = {
   javascript: { evaluate: runJavaScript },
   typescript: { evaluate: runTypeScript },
@@ -64,10 +68,6 @@ const unsupported = (lang: string): ResultAsync<never, CompilerError> =>
     kind: "unsupported",
     message: `Unsupported language: ${lang}`,
   });
-
-const runJavaScript = async (jsCode: string): Promise<void> => {
-  new Function("assert", jsCode)(assert);
-}
 
 async function runTypeScript(code: string): Promise<void> {
   const ts = await loadTypeScript();
