@@ -8,6 +8,10 @@
   "files": {
     "includes": ["**", "!!**/dist", "!**/*.svg"]
   },
+  "plugins": [
+    "./node_modules/@styled-cva/biome-plugin/rules/normalize-tw-classes.grit",
+    "./node_modules/@styled-cva/biome-plugin/rules/multiline-long-tw.grit"
+  ],
   "css": {
     "parser": {
       "tailwindDirectives": true
