@@ -49,8 +49,8 @@ export function evaluateKoan(lang: string, userCode: string): ResultAsync<boolea
   return evaluation.map(() => true).mapErr(toError);
 }
 
-function compilerFor(lang: string): CompilerPort | undefined {
-  return match(lang)
+const compilerFor = (lang: string): CompilerPort | undefined =>
+  match(lang)
     .returnType<CompilerPort | undefined>()
     .with("javascript", () => compilers.javascript)
     .with("typescript", () => compilers.typescript)
@@ -58,16 +58,14 @@ function compilerFor(lang: string): CompilerPort | undefined {
     .with("coffeescript", () => compilers.coffeescript)
     .with("gleam", () => compilers.gleam)
     .otherwise(() => undefined);
-}
 
-function unsupported(lang: string): ResultAsync<never, CompilerError> {
-  return errAsync({
+const unsupported = (lang: string): ResultAsync<never, CompilerError> =>
+  errAsync({
     kind: "unsupported",
     message: `Unsupported language: ${lang}`,
   });
-}
 
-async function runJavaScript(jsCode: string): Promise<void> {
+const runJavaScript = async (jsCode: string): Promise<void> => {
   new Function("assert", jsCode)(assert);
 }
 
