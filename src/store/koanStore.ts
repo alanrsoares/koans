@@ -1,6 +1,6 @@
 import { isErr } from "@onrails/result";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { createContainer } from "unstated-next";
 import { evaluateKoan } from "../compiler/index.ts";
@@ -38,6 +38,26 @@ function useKoanController() {
   const [currentLanguage, setCurrentLanguage] = useState("javascript");
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [activeExerciseIndex, setActiveExerciseIndex] = useState(0);
+
+  const setTransitionActiveExerciseIndex = useCallback((index: React.SetStateAction<number>) => {
+    startTransition(() => {
+      setActiveExerciseIndex(index);
+    });
+  }, []);
+
+  const navigateToExercise = useCallback(
+    (direction: "prev" | "next") => {
+      const category = KOANS[currentLanguage]?.categories[currentCategoryIndex];
+      if (!category) return;
+      if (direction === "next" && activeExerciseIndex < category.exercises.length - 1) {
+        setTransitionActiveExerciseIndex(activeExerciseIndex + 1);
+      } else if (direction === "prev" && activeExerciseIndex > 0) {
+        setTransitionActiveExerciseIndex(activeExerciseIndex - 1);
+      }
+    },
+    [currentLanguage, currentCategoryIndex, activeExerciseIndex, setTransitionActiveExerciseIndex]
+  );
+
   const [activeError, setActiveError] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -71,6 +91,34 @@ function useKoanController() {
     const next = cat ? (progress[currentLanguage]?.[cat.name]?.indexOf(false) ?? -1) : -1;
     setActiveExerciseIndex(next === -1 ? 0 : next);
   }, [currentLanguage, currentCategoryIndex, progress]);
+
+  // Global arrow left/right navigation for exercises when not in inputs
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (showCelebration || showResetConfirm) {
+        return;
+      }
+
+      if (e.key === "ArrowLeft") {
+        navigateToExercise("prev");
+      } else if (e.key === "ArrowRight") {
+        navigateToExercise("next");
+      }
+    };
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleGlobalKeyDown);
+    };
+  }, [showCelebration, showResetConfirm, navigateToExercise]);
 
   const handleLanguageChange = (nextLang: string) => {
     startTransition(() => {
@@ -173,6 +221,22 @@ function useKoanController() {
     await verifyKoan(koanIndex, updatedAnswers, false);
   };
 
+  const handleArrowKeyInput = (
+    input: HTMLInputElement,
+    inputs: HTMLInputElement[],
+    inputIndex: number,
+    key: string
+  ) => {
+    if (key === "ArrowRight" && input.selectionStart === input.value.length) {
+      const isLast = inputIndex === inputs.length - 1;
+      if (isLast) navigateToExercise("next");
+      else focusInput(inputs, inputIndex + 1);
+    } else if (key === "ArrowLeft" && input.selectionEnd === 0) {
+      if (inputIndex === 0) navigateToExercise("prev");
+      else focusInput(inputs, inputIndex - 1);
+    }
+  };
+
   const handleInputKeyDown = (
     koanIndex: number,
     inputIndex: number,
@@ -182,17 +246,16 @@ function useKoanController() {
     const card = document.querySelector(".koan-card");
     if (!card) return;
     const inputs = Array.from(card.querySelectorAll<HTMLInputElement>(".koan-input"));
-    const atEnd = input.selectionStart === input.value.length;
-    const atStart = input.selectionEnd === 0;
-    const isLast = inputIndex === inputs.length - 1;
 
-    if (e.key === "ArrowRight" && atEnd) focusInput(inputs, inputIndex + 1);
-    else if (e.key === "ArrowLeft" && atStart) focusInput(inputs, inputIndex - 1);
-    else if (e.key === "Enter") {
+    if (e.key === "Enter") {
       e.preventDefault();
+      const isLast = inputIndex === inputs.length - 1;
       if (isLast) verifyKoan(koanIndex, answers, true);
       else focusInput(inputs, inputIndex + 1);
+      return;
     }
+
+    handleArrowKeyInput(input, inputs, inputIndex, e.key);
   };
 
   // Start a chosen language track from the celebration modal's track picker.
@@ -270,12 +333,6 @@ function useKoanController() {
     stage,
     allSolved,
     langProgress,
-  };
-
-  const setTransitionActiveExerciseIndex = (index: React.SetStateAction<number>) => {
-    startTransition(() => {
-      setActiveExerciseIndex(index);
-    });
   };
 
   const actions = {
