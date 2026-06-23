@@ -2,8 +2,8 @@ import { unwrapOr } from "@onrails/maybe";
 import { fromResult } from "@onrails/maybe/interop";
 import { trySync } from "@onrails/result";
 import { z } from "zod";
-import type { AnswersState, ProgressState } from "../types.ts";
 import { KOANS } from "../koans.ts";
+import type { AnswersState, ProgressState } from "../types.ts";
 
 export const STORAGE_KEY = "zen_koans_progress_v2";
 
