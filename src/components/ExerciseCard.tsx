@@ -191,17 +191,15 @@ export function ExerciseCard({
 
       <KoanCard $error={Boolean(activeError)}>
         {isPassed && <HankoSeal aria-hidden="true">禅</HankoSeal>}
-
         <CodeBlock $noLigatures={disableLigatures}>{renderCodeTokenized()}</CodeBlock>
-
         <LigatureToggle>
+          font ligatures
           <input
             type="checkbox"
-            checked={disableLigatures}
-            onChange={(e) => onToggleLigatures(e.target.checked)}
+            checked={!disableLigatures}
+            onChange={(e) => onToggleLigatures(!e.target.checked)}
             className="size-3.5 cursor-pointer accent-maple"
           />
-          Ligatures {disableLigatures ? "on" : "off"}
         </LigatureToggle>
       </KoanCard>
     </div>
