@@ -4,8 +4,12 @@ import { flushSync } from "react-dom";
 import { KOANS } from "../../koans.ts";
 import type { ProgressState } from "../../types.ts";
 
+interface ViewTransition {
+  finished: Promise<void>;
+}
+
 interface DocumentWithTransition {
-  startViewTransition?: (cb: () => void) => void;
+  startViewTransition?: (cb: () => void) => ViewTransition;
 }
 
 const startTransition = (cb: () => void) => {

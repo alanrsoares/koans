@@ -34,14 +34,20 @@
         }
       },
       "correctness": {
-        "noUnusedVariables": "warn"
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error"
+      },
+      "style": {
+        "useConst": "error",
+        "useTemplate": "error"
       },
       "security": {
         "noGlobalEval": "off"
       },
       "suspicious": {
         "noAssignInExpressions": "off",
-        "noArrayIndexKey": "off"
+        "noArrayIndexKey": "off",
+        "noExplicitAny": "error"
       },
       "a11y": {
         "useKeyWithClickEvents": "off",

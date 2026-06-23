@@ -101,7 +101,10 @@ export function ExerciseCard({
   useEffect(() => {
     const inputs = cardRef.current?.querySelectorAll<HTMLInputElement>(".koan-input");
     if (!inputs?.length) return;
-    (Array.from(inputs).find((input) => !input.value) ?? inputs[0]).focus();
+    const firstInput = inputs[0];
+    if (firstInput) {
+      (Array.from(inputs).find((input) => !input.value) ?? firstInput).focus();
+    }
   }, []);
 
   // Tailwind class for a token's syntax color.

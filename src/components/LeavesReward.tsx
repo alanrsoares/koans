@@ -14,9 +14,7 @@ export function LeavesReward(): React.JSX.Element | null {
     <Suspense fallback={null}>
       {/* During the path-complete modal, lift leaves above the overlay blur (below the dialog);
           the all-paths finale stays ambient behind content. */}
-      <FallingLeaves
-        className={state.showCelebration && state.stage === "subpath" ? "z-55" : undefined}
-      />
+      <FallingLeaves className={state.showCelebration && state.stage === "subpath" ? "z-55" : ""} />
     </Suspense>
   ) : null;
 }

@@ -66,12 +66,13 @@ function useKoanController() {
   const category = langConfig?.categories[navigation.currentCategoryIndex];
   const exercise = category?.exercises[navigation.activeExerciseIndex];
 
-  const activeProgressList = persisted.progress[navigation.currentLanguage]?.[category?.name] || [];
+  const activeProgressList =
+    (category ? persisted.progress[navigation.currentLanguage]?.[category.name] : null) || [];
   const isPassed = activeProgressList[navigation.activeExerciseIndex] === true;
 
   const nextIncompleteCat = firstIncompleteCategory(navigation.currentLanguage, persisted.progress);
   const nextLessonName =
-    nextIncompleteCat === -1 ? null : langConfig.categories[nextIncompleteCat].name;
+    nextIncompleteCat === -1 ? null : langConfig?.categories[nextIncompleteCat]?.name || null;
 
   const allSolved = Object.keys(KOANS).every((l) => isLangSolved(l, persisted.progress));
   const subpathSolved = isLangSolved(navigation.currentLanguage, persisted.progress);
@@ -79,7 +80,7 @@ function useKoanController() {
 
   const availableTracks = Object.keys(KOANS)
     .filter((l) => !isLangSolved(l, persisted.progress))
-    .map((l) => ({ key: l, name: KOANS[l].name }));
+    .map((l) => ({ key: l, name: KOANS[l]?.name ?? "" }));
 
   const langProgress = (() => {
     const categories = langConfig?.categories || [];

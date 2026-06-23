@@ -79,7 +79,7 @@ export function tokenize(code: string, lang: string): Token[] {
     }
 
     if (!matched) {
-      tokens.push({ type: "other", value: code[index] });
+      tokens.push({ type: "other", value: code[index] ?? "" });
       index++;
     }
   }

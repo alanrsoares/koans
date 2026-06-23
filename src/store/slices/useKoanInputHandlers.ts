@@ -4,7 +4,8 @@ import { KOANS } from "../../koans.ts";
 import type { AnswersState, ProgressState } from "../../types.ts";
 
 const focusInput = (inputs: HTMLInputElement[], index: number): void => {
-  if (index >= 0 && index < inputs.length) inputs[index].focus();
+  const target = inputs[index];
+  if (target) target.focus();
 };
 
 interface UseKoanInputHandlersProps {
@@ -37,10 +38,10 @@ export function useKoanInputHandlers({
 
       const updatedAnswers = JSON.parse(JSON.stringify(answers)) as AnswersState;
       const lang = currentLanguage;
-      updatedAnswers[lang] ??= {};
-      updatedAnswers[lang][category.name] ??= {};
-      updatedAnswers[lang][category.name][koanIndex] ??= [];
-      updatedAnswers[lang][category.name][koanIndex][inputIndex] = value;
+      const answersLang = (updatedAnswers[lang] ??= {});
+      const answersCat = (answersLang[category.name] ??= {});
+      const answersKoan = (answersCat[koanIndex] ??= []);
+      answersKoan[inputIndex] = value;
 
       saveState(progress, updatedAnswers);
       await verifyKoan(koanIndex, updatedAnswers, false);

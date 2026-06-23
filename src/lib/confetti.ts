@@ -43,7 +43,7 @@ export function triggerCanvasConfetti() {
       vx: (Math.random() - 0.5) * 12 * window.devicePixelRatio,
       vy: (Math.random() - 0.7) * 16 * window.devicePixelRatio,
       radius: Math.random() * 4 + 2 * window.devicePixelRatio,
-      color: colors[Math.floor(Math.random() * colors.length)],
+      color: colors[Math.floor(Math.random() * colors.length)] ?? "#d8cdb8",
       alpha: 1,
       decay: Math.random() * 0.012 + 0.008,
       rotation: Math.random() * Math.PI * 2,

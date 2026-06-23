@@ -9,8 +9,12 @@ import { blankCount, fillBlanks } from "../../lib/fillBlanks.ts";
 import type { AnswersState, ProgressState } from "../../types.ts";
 import { firstIncompleteCategory, isLangSolved } from "./useKoanNavigation.ts";
 
+interface ViewTransition {
+  finished: Promise<void>;
+}
+
 interface DocumentWithTransition {
-  startViewTransition?: (cb: () => void) => void;
+  startViewTransition?: (cb: () => void) => ViewTransition;
 }
 
 const startTransition = (cb: () => void) => {
@@ -81,7 +85,9 @@ export function useKoanVerification({
       const category = KOANS[lang]?.categories[currentCategoryIndex];
       if (!category) return;
 
-      const { template } = category.exercises[koanIndex];
+      const exercise = category.exercises[koanIndex];
+      if (!exercise) return;
+      const { template } = exercise;
       const userAnswers = activeAnswers[lang]?.[category.name]?.[koanIndex] || [];
 
       if (!allBlanksFilled(userAnswers, blankCount(template)) && !forceVerify) {
@@ -96,16 +102,18 @@ export function useKoanVerification({
       }
 
       const updatedProgress = JSON.parse(JSON.stringify(progress)) as ProgressState;
-      updatedProgress[lang][category.name][koanIndex] = true;
+      const progressLang = (updatedProgress[lang] ??= {});
+      const progressCat = (progressLang[category.name] ??= []);
+      progressCat[koanIndex] = true;
       saveState(updatedProgress, activeAnswers);
       setActiveError(null);
 
-      const progressList = updatedProgress[lang][category.name];
-      const lessonComplete = progressList.every(Boolean);
+      const progressList = updatedProgress[lang]?.[category.name];
+      const lessonComplete = progressList ? progressList.every(Boolean) : false;
       const pathComplete = lessonComplete && isLangSolved(lang, updatedProgress);
 
       playProgressChime(lessonComplete, pathComplete);
-      celebrateOrAdvance(progressList, lessonComplete, pathComplete);
+      celebrateOrAdvance(progressList ?? [], lessonComplete, pathComplete);
     },
     [
       currentLanguage,

@@ -78,7 +78,7 @@ export function Header({
               {Object.keys(KOANS).map((langKey) => (
                 <SelectItem key={langKey} value={langKey}>
                   <LangIcon lang={langKey} className="size-4 shrink-0" />
-                  {KOANS[langKey].name}
+                  {KOANS[langKey]?.name ?? ""}
                 </SelectItem>
               ))}
             </SelectContent>

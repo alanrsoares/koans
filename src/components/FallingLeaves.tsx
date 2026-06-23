@@ -64,7 +64,7 @@ export function FallingLeaves({ className }: { className?: string }) {
       swaySpeed: rand(0.008, 0.02),
       flutter: rand(0, Math.PI * 2),
       flutterSpeed: rand(0.01, 0.03),
-      color: LEAF_COLORS[Math.floor(Math.random() * LEAF_COLORS.length)],
+      color: LEAF_COLORS[Math.floor(Math.random() * LEAF_COLORS.length)] ?? "#9e3520",
     });
 
     const count = Math.max(10, Math.min(22, Math.round(w / 90)));
