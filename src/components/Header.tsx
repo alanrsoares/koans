@@ -9,6 +9,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip.tsx";
 import { KOANS } from "../koans.ts";
 import { LangIcon } from "./LangIcon.tsx";
+import { ZenIcon } from "./ZenIcon.tsx";
 
 interface HeaderProps {
   currentLanguage: string;
@@ -34,14 +35,12 @@ export function Header({
   return (
     <header className="w-full bg-[#eae3db]/80 backdrop-blur-sm border-b border-[#dbd4cb]/60 py-4 px-6 md:px-12 flex flex-wrap items-center justify-between z-10 relative select-none">
       <div className="flex items-center gap-3">
-        <img
-          src="/svg/yin_yang_leaf_symbol.svg"
+        <ZenIcon
+          src="svg/yin_yang_leaf_symbol.svg"
           className="size-6 opacity-85"
           style={{
             filter: "brightness(0.3) sepia(0.1)",
           }}
-          aria-hidden="true"
-          alt=""
         />
         <h1 className="text-base font-bold tracking-wide text-[#4a3e3d] font-display">Zen Koans</h1>
         <Tooltip>

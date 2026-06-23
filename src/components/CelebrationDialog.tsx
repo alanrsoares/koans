@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select.tsx";
 import { LangIcon } from "./LangIcon.tsx";
+import { ZenIcon } from "./ZenIcon.tsx";
 
 type Stage = "lesson" | "subpath" | "all";
 
@@ -69,16 +70,13 @@ export function CelebrationDialog({
         <DialogHeader className="flex flex-col items-center gap-3">
           {/* Ensō — the brush circle of completion and wholeness (also the app's mark). */}
           <div className="text-maple mb-1">
-            <img
-              src="/svg/zen_brush_symbol.svg"
+            <ZenIcon
+              src="svg/zen_brush_symbol.svg"
               className="size-16 mx-auto"
               style={{
                 filter:
                   "invert(24%) sepia(59%) saturate(1903%) hue-rotate(338deg) brightness(84%) contrast(92%)",
               }}
-              role="img"
-              aria-hidden="true"
-              alt=""
             />
           </div>
           <DialogTitle
