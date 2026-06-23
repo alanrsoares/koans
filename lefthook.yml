@@ -1,0 +1,8 @@
+# Lefthook configuration to run Biome format + lint checks on pre-commit
+# Ref: https://github.com/evilmartians/lefthook
+
+pre-commit:
+  commands:
+    biome:
+      glob: "*.{js,ts,jsx,tsx,css,json}"
+      run: bunx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git add {staged_files}

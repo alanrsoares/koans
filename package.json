@@ -12,7 +12,8 @@
     "test": "bun test src",
     "test:koans": "playwright test",
     "check": "bun run lint && bun run test",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "lefthook install"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",
@@ -44,6 +45,7 @@
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6",
     "bun-types": "^1.3.14",
+    "lefthook": "^2.1.9",
     "typescript": "~6",
     "vite": "^8"
   }
