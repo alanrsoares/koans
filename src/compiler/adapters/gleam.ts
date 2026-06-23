@@ -1,4 +1,5 @@
-import { type CompilerAdapter, messageOf, requireTrue } from "../core.ts";
+import { type CompilerAdapter, messageOf } from "../core.ts";
+import { runInSandbox } from "../sandbox.ts";
 
 const GLEAM_CDN =
   "https://cdn.jsdelivr.net/gh/live-codes/gleam-precompiled@main/build/dev/javascript";
@@ -49,19 +50,11 @@ export const gleam: CompilerAdapter = {
     const jsCode = gleam.read_compiled_javascript(1, "main");
     if (!jsCode) throw new Error("Compilation failed: could not generate JavaScript.");
 
-    const url = URL.createObjectURL(
-      new Blob([resolveGleamImports(jsCode)], { type: "text/javascript" })
-    );
-    try {
-      const module = await import(/* @vite-ignore */ url);
-      if (typeof module.exercise !== "function") {
-        throw new Error(
-          "Function 'exercise' was not exported. Ensure your template contains 'pub fn exercise()'."
-        );
-      }
-      requireTrue(module.exercise());
-    } finally {
-      URL.revokeObjectURL(url);
-    }
+    const resolvedJs = resolveGleamImports(jsCode);
+    return runInSandbox({
+      code: resolvedJs,
+      language: "gleam",
+      entryPoint: "exercise",
+    });
   },
 };

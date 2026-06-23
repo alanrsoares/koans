@@ -1,4 +1,5 @@
-import { type CompilerAdapter, requireTrue } from "../core.ts";
+import type { CompilerAdapter } from "../core.ts";
+import { runInSandbox } from "../sandbox.ts";
 
 async function loadSquint(): Promise<SquintCompiler> {
   if (window.squint_compiler) return window.squint_compiler;
@@ -21,15 +22,12 @@ export const clojurescript: CompilerAdapter = {
   language: "clojurescript",
   evaluate: async (code) => {
     const squint = await loadSquint();
-    requireTrue(
-      globalThis.eval(
-        stripSquintExports(
-          squint.compileString(code, {
-            "elide-imports": true,
-            context: "expr",
-          })
-        )
-      )
+    const compiled = stripSquintExports(
+      squint.compileString(code, {
+        "elide-imports": true,
+        context: "expr",
+      })
     );
+    return runInSandbox({ code: compiled, language: "clojurescript" });
   },
 };

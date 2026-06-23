@@ -1,4 +1,5 @@
-import { type CompilerAdapter, loadGlobal, runJavaScript } from "../core.ts";
+import { type CompilerAdapter, loadGlobal } from "../core.ts";
+import { runInSandbox } from "../sandbox.ts";
 
 const loadCoffeeScript = (): Promise<CoffeeScriptCompiler> =>
   loadGlobal(
@@ -11,6 +12,7 @@ export const coffeescript: CompilerAdapter = {
   language: "coffeescript",
   evaluate: async (code) => {
     const coffee = await loadCoffeeScript();
-    return runJavaScript(coffee.compile(code, { bare: true }));
+    const compiled = coffee.compile(code, { bare: true });
+    return runInSandbox({ code: compiled, language: "coffeescript" });
   },
 };

@@ -1,4 +1,5 @@
-import { type CompilerAdapter, loadGlobal, runJavaScript } from "../core.ts";
+import { type CompilerAdapter, loadGlobal } from "../core.ts";
+import { runInSandbox } from "../sandbox.ts";
 
 const loadTypeScript = (): Promise<TypeScriptCompiler> =>
   loadGlobal(
@@ -11,13 +12,12 @@ export const typescript: CompilerAdapter = {
   language: "typescript",
   evaluate: async (code) => {
     const ts = await loadTypeScript();
-    return runJavaScript(
-      ts.transpileModule(code, {
-        compilerOptions: {
-          target: ts.ScriptTarget.ES2020,
-          module: ts.ModuleKind.None,
-        },
-      }).outputText
-    );
+    const compiled = ts.transpileModule(code, {
+      compilerOptions: {
+        target: ts.ScriptTarget.ES2020,
+        module: ts.ModuleKind.None,
+      },
+    }).outputText;
+    return runInSandbox({ code: compiled, language: "typescript" });
   },
 };

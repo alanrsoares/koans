@@ -1,6 +1,7 @@
-import { type CompilerAdapter, runJavaScript } from "../core.ts";
+import type { CompilerAdapter } from "../core.ts";
+import { runInSandbox } from "../sandbox.ts";
 
 export const javascript: CompilerAdapter = {
   language: "javascript",
-  evaluate: runJavaScript,
+  evaluate: (code) => runInSandbox({ code, language: "javascript" }),
 };
