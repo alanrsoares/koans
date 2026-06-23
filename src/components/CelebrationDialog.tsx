@@ -73,7 +73,8 @@ export function CelebrationDialog({
               src="/svg/zen_brush_symbol.svg"
               className="size-16 mx-auto"
               style={{
-                filter: "invert(24%) sepia(59%) saturate(1903%) hue-rotate(338deg) brightness(84%) contrast(92%)",
+                filter:
+                  "invert(24%) sepia(59%) saturate(1903%) hue-rotate(338deg) brightness(84%) contrast(92%)",
               }}
               role="img"
               aria-hidden="true"
